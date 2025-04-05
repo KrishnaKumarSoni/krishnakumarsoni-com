@@ -1,0 +1,179 @@
+/* Offerings Page Styles */
+.offerings-section {
+    padding: 2rem 1.5rem;
+    min-height: calc(100vh - var(--nav-height));
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.offerings-section h1 {
+    font-size: 1.75rem;
+    margin-bottom: 2rem;
+    color: var(--text-dark);
+    font-weight: 500;
+}
+
+.offerings-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    padding: 0;
+}
+
+.offering-items {
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    padding: 1.25rem;
+    border-radius: 16px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.offering-items:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.offering-items h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.25rem;
+    margin: 0 0 1rem;
+    color: var(--text-dark);
+    font-weight: 500;
+}
+
+.offering-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    cursor: pointer;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.offering-item:last-child {
+    border-bottom: none;
+}
+
+.offering-item span {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--text-medium);
+    font-weight: 400;
+}
+
+.offering-item input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 1rem;
+    height: 1rem;
+    border: 1px solid #D35400;
+    border-radius: 6px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+    margin-top: 0.25rem;
+}
+
+.offering-item input[type="checkbox"]:checked {
+    background-color: #D35400;
+}
+
+.offering-item input[type="checkbox"]:checked::after {
+    content: '✓';
+    color: white;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.7rem;
+}
+
+.offering-item:hover input[type="checkbox"] {
+    border-color: #D35400;
+    opacity: 0.8;
+}
+
+/* Cart and Price Section */
+.cart-section {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255, 248, 244, 0.98);
+    padding: 0.75rem 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid rgba(211, 84, 0, 0.1);
+    backdrop-filter: blur(8px);
+}
+
+.cart-count {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: white;
+}
+
+.pay-button {
+    background: #D35400;
+    color: white;
+    padding: 0.5rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: opacity 0.2s ease;
+}
+
+.pay-button:hover {
+    opacity: 0.9;
+}
+
+@media (max-width: 1200px) {
+    .offerings-section {
+        padding: 2rem 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .offerings-section {
+        padding: 1.5rem 1rem;
+    }
+
+    .offerings-section h1 {
+        font-size: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .offerings-list {
+        gap: 1rem;
+    }
+
+    .offering-items {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .offerings-section {
+        padding: 1.25rem 0.75rem;
+    }
+
+    .offerings-list {
+        gap: 0.75rem;
+    }
+
+    .offering-items {
+        padding: 1rem;
+    }
+
+    .offering-item span {
+        font-size: 0.85rem;
+    }
+
+    .cart-section {
+        padding: 0.5rem 1rem;
+    }
+} 

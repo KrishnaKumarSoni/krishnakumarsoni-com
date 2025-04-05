@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Portfolio{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        /* Global styles */
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .nav-icon-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .offerings-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background-color: var(--burnt-orange);
+            color: white;
+            font-size: 0.7rem;
+            display: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            justify-content: center;
+            align-items: center;
+            font-weight: 500;
+        }
+        @media (max-width: 768px) {
+            .offerings-badge {
+                top: 0;
+                right: 0;
+                font-size: 0.65rem;
+                width: 16px;
+                height: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="main-nav">
+        <ul>
+            <li><a href="/" class="{{ 'active' if active_page == 'home' }}"><i class="ph ph-house"></i> Home</a></li>
+            <li>
+                <a href="/offerings" class="{{ 'active' if active_page == 'offerings' }}">
+                    <span class="nav-icon-container">
+                        <i class="ph ph-gift"></i>
+                        <span class="offerings-badge">0</span>
+                    </span>
+                    Offerings
+                </a>
+            </li>
+            <li><a href="/solutions" class="{{ 'active' if active_page == 'solutions' }}"><i class="ph ph-lightbulb"></i> Solutions</a></li>
+            <li><a href="/blogs" class="{{ 'active' if active_page == 'blogs' }}"><i class="ph ph-article"></i> Blogs</a></li>
+            <li><a href="/resume" class="{{ 'active' if active_page == 'resume' }}"><i class="ph ph-user"></i> Resume</a></li>
+        </ul>
+    </nav>
+    
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        {% block footer %}{% endblock %}
+    </footer>
+
+    <!-- Initialize cart badge on all pages -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Update badge from localStorage
+        const cartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
+        const count = cartItems.length;
+        const navBadges = document.querySelectorAll('.offerings-badge');
+        
+        navBadges.forEach(badge => {
+            if (count > 0) {
+                badge.textContent = count;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        });
+        
+        // Add scroll effect to navigation
+        window.addEventListener('scroll', function() {
+            const nav = document.querySelector('.main-nav');
+            if (window.scrollY > 10) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+    });
+    </script>
+
+    {% block footer_scripts %}{% endblock %}
+</body>
+</html> 

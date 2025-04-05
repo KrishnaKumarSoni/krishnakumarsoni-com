@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}{{ blog.title }} - Krishna Kumar Soni{% endblock %}
+
+{% block content %}
+<div class="container">
+    <article class="blog-post">
+        <header class="blog-header">
+            <div class="blog-meta">
+                <time datetime="{{ blog.date_iso }}">{{ blog.date }}</time>
+                <span class="blog-category">{{ blog.category }}</span>
+            </div>
+            <h1>{{ blog.title }}</h1>
+        </header>
+        
+        {% if blog.thumbnail %}
+            <div class="blog-hero">
+                <img src="{{ blog.thumbnail }}" alt="{{ blog.title }}">
+            </div>
+        {% endif %}
+        
+        <div class="blog-content">
+            {{ blog.content | safe }}
+        </div>
+        
+        <footer class="blog-footer">
+            <a href="{{ url_for('blogs') }}" class="back-link">
+                <i class="ri-arrow-left-line"></i>
+                Back to blogs
+            </a>
+        </footer>
+    </article>
+</div>
+
+<style>
+.blog-post {
+    max-width: 800px;
+    margin: 4rem auto;
+    padding: 0 1rem;
+}
+
+.blog-header {
+    margin-bottom: 2rem;
+}
+
+.blog-meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.blog-meta time {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.875rem;
+    color: #666;
+}
+
+.blog-category {
+    background: rgba(211, 84, 0, 0.1);
+    color: var(--burnt-orange);
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.875rem;
+}
+
+.blog-header h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2.5rem;
+    line-height: 1.2;
+    margin: 0;
+    color: var(--text-dark);
+}
+
+.blog-hero {
+    margin: 2rem -1rem;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.blog-hero img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.blog-content {
+    font-size: 1.125rem;
+    line-height: 1.8;
+    color: var(--text-dark);
+}
+
+.blog-content p {
+    margin: 1.5rem 0;
+}
+
+.blog-content h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.75rem;
+    margin: 2.5rem 0 1rem;
+}
+
+.blog-content h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.5rem;
+    margin: 2rem 0 1rem;
+}
+
+.blog-content ul, 
+.blog-content ol {
+    margin: 1.5rem 0;
+    padding-left: 1.5rem;
+}
+
+.blog-content li {
+    margin: 0.5rem 0;
+}
+
+.blog-content a {
+    color: var(--burnt-orange);
+    text-decoration: none;
+}
+
+.blog-content a:hover {
+    text-decoration: underline;
+}
+
+.blog-footer {
+    margin-top: 4rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--burnt-orange);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .blog-post {
+        margin: 2rem auto;
+    }
+
+    .blog-header h1 {
+        font-size: 2rem;
+    }
+
+    .blog-hero {
+        margin: 1.5rem -1rem;
+    }
+
+    .blog-content {
+        font-size: 1rem;
+    }
+
+    .blog-content h2 {
+        font-size: 1.5rem;
+    }
+
+    .blog-content h3 {
+        font-size: 1.25rem;
+    }
+}
+</style>
+{% endblock %} 

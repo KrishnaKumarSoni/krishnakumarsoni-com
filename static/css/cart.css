@@ -1,0 +1,291 @@
+/* Cart Widget Styles */
+.cart-widget {
+    background: #ffe8d9;
+    border-radius: 20px;
+    border: 1px solid var(--burnt-orange);
+    margin: 0.75rem 0 1.5rem;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: transform 0.3s ease, opacity 0.3s ease, background-color 0.01s linear 0.3s;
+    position: sticky;
+    top: calc(var(--nav-height) + 1rem);
+    z-index: 100;
+    box-shadow: 0 2px 6px rgba(211, 84, 0, 0.08);
+}
+
+.cart-widget::before {
+    content: none;
+}
+
+.cart-widget.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.cart-widget-content {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1.25rem;
+    position: relative;
+    background: #ffe8d9;
+    transition: all 0.3s ease;
+}
+
+.cart-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+}
+
+.cart-left i {
+    font-size: 1.25rem;
+    color: var(--burnt-orange);
+    filter: drop-shadow(0 1px 1px rgba(211, 84, 0, 0.15));
+    animation: wiggle 6s ease-in-out infinite;
+}
+
+@keyframes wiggle {
+    0%, 100% { transform: rotate(0deg); }
+    92% { transform: rotate(0deg); }
+    94% { transform: rotate(-7deg); }
+    96% { transform: rotate(7deg); }
+    98% { transform: rotate(-4deg); }
+}
+
+.cart-count {
+    background: var(--burnt-orange);
+    color: white;
+    padding: 0.2rem 0.5rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.cart-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.total-price {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-dark);
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.4);
+    padding: 0.3rem 0.6rem;
+    border-radius: 8px;
+    border: 1px solid rgba(211, 84, 0, 0.1);
+}
+
+.pay-container {
+    position: relative;
+    min-width: 120px;
+    height: 36px;
+    transition: min-width 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transform: translateZ(0);
+}
+
+.pay-container.show-email {
+    min-width: 240px;
+}
+
+.pay-container.show-email .email-input-container {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+}
+
+.pay-container.show-email ~ .total-price,
+.pay-container.show-email ~ .expand-cart {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-100%);
+    position: absolute;
+    right: 0;
+}
+
+.email-input-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.8);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.email-input {
+    width: 100%;
+    height: 100%;
+    padding: 0.5rem 2.5rem 0.5rem 0.75rem;
+    border: 1px solid var(--burnt-orange);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    outline: none;
+    background: white;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.email-input:focus {
+    border-color: #e67e22;
+    box-shadow: 0 2px 8px rgba(211, 84, 0, 0.1);
+}
+
+.cart-details {
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    background: #ffe8d9;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.cart-details.expanded {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.cart-details.expanded::-webkit-scrollbar {
+    width: 8px;
+}
+
+.cart-details.expanded::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+
+.cart-details.expanded::-webkit-scrollbar-thumb {
+    background: rgba(211, 84, 0, 0.3);
+    border-radius: 4px;
+}
+
+.cart-details.expanded::-webkit-scrollbar-thumb:hover {
+    background: rgba(211, 84, 0, 0.5);
+}
+
+.cart-items {
+    padding: 0.75rem 1.25rem;
+}
+
+.cart-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    color: var(--text-dark);
+    font-size: 0.9rem;
+    position: relative;
+}
+
+.cart-item:not(:last-child) {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.cart-item .item-name {
+    font-weight: 400;
+    padding-left: 1.25rem;
+    position: relative;
+}
+
+.cart-item .item-name::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--burnt-orange);
+    opacity: 0.8;
+}
+
+.cart-item .item-price {
+    font-weight: 500;
+    color: var(--burnt-orange);
+}
+
+.cart-summary {
+    margin-top: 0;
+    padding: 0.75rem 1.25rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    background: #ffe8d9;
+}
+
+.summary-line {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 500;
+    color: var(--text-dark);
+    font-size: 0.95rem;
+}
+
+.cart-widget.thank-you-state {
+    background: #ffe8d9;
+    padding: 0.75rem;
+}
+
+.cart-widget.thank-you-state .cart-widget-content,
+.cart-widget.thank-you-state .cart-details {
+    display: none;
+}
+
+.thank-you-banner {
+    display: none;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--burnt-orange);
+    font-weight: 400;
+    font-size: 0.95rem;
+    background: rgba(255, 255, 255, 0.4);
+    padding: 0.4rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid rgba(211, 84, 0, 0.1);
+}
+
+.cart-widget.thank-you-state .thank-you-banner {
+    display: flex;
+}
+
+.cart-total {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 1.25rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    font-weight: 500;
+    color: var(--text-dark);
+}
+
+@media (max-width: 768px) {
+    .cart-widget {
+        position: fixed;
+        top: 0.75rem;
+        left: 0.75rem;
+        right: 0.75rem;
+        margin: 0;
+        z-index: 1001;
+    }
+
+    .cart-widget-content {
+        padding: 0.75rem 1rem;
+    }
+
+    .cart-widget.thank-you-state {
+        padding: 0.75rem;
+    }
+    
+    .thank-you-banner {
+        font-size: 0.9rem;
+    }
+    
+    .email-input {
+        padding: 0.5rem 2.5rem 0.5rem 0.75rem;
+    }
+} 

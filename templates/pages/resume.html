@@ -1,0 +1,405 @@
+{% extends "base.html" %}
+
+{% block title %}Resume - Krishna Kumar Soni{% endblock %}
+
+{% block content %}
+<div class="container resume-container resume-v2">
+    <div class="resume-actions">
+        <div class="share-menu" id="shareMenu">
+            <a href="https://wa.me/?text={{ request.url|urlencode }}" target="_blank" title="Share on WhatsApp">
+                <i class="ph ph-whatsapp-logo"></i>
+            </a>
+            <a href="https://twitter.com/intent/tweet?url={{ request.url|urlencode }}&text=Check%20out%20my%20resume" target="_blank" title="Share on Twitter">
+                <i class="ph ph-twitter-logo"></i>
+            </a>
+            <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.url|urlencode }}" target="_blank" title="Share on LinkedIn">
+                <i class="ph ph-linkedin-logo"></i>
+            </a>
+            <a href="mailto:?subject=My Professional Resume&body=Check out my resume: {{ request.url|urlencode }}" title="Share via Email">
+                <i class="ph ph-envelope-simple"></i>
+            </a>
+        </div>
+        <button class="resume-action-btn" onclick="toggleShareMenu()" title="Share Resume" id="shareBtn">
+            <i class="ph ph-share-network"></i>
+        </button>
+        <button class="resume-action-btn" onclick="copyLink()" title="Copy Link" id="copyBtn">
+            <i class="ph ph-link"></i>
+        </button>
+    </div>
+    
+    <div id="snackbar">Link copied to clipboard!</div>
+
+    <div class="resume-card profile-card">
+        <h1>Krishna Kumar Soni</h1>
+        <p class="profile-subtitle">Product Management</p>
+        
+        <div class="contact-info">
+            <a href="mailto:krishnakumarconnects@gmail.com" class="contact-link">
+                <i class="ph ph-envelope-simple"></i>
+                <span class="contact-detail">krishnakumarconnects@gmail.com</span>
+            </a>
+            <a href="tel:+919166900151" class="contact-link">
+                <i class="ph ph-phone"></i>
+                <span class="contact-detail">+91 9166900151</span>
+            </a>
+        </div>
+        
+        <div class="social-links">
+            <a href="https://linkedin.com/in/krishnakumarsoni" target="_blank" title="LinkedIn">
+                <i class="ph ph-linkedin-logo"></i>
+            </a>
+            <a href="https://twitter.com/krishnakumarso" target="_blank" title="Twitter">
+                <i class="ph ph-twitter-logo"></i>
+            </a>
+            <a href="https://github.com/krishnakumarsoni" target="_blank" title="Github">
+                <i class="ph ph-github-logo"></i>
+            </a>
+            <a href="https://youtube.com/@krishnakumarsoni" target="_blank" title="Youtube">
+                <i class="ph ph-youtube-logo"></i>
+            </a>
+            <a href="https://krishnakumarsoni.com" target="_blank" title="Portfolio">
+                <i class="ph ph-globe"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="resume-card">
+        <div class="card-header">
+            <i class="ph ph-briefcase"></i>
+            <h2>Work Experience</h2>
+        </div>
+        
+        <div class="experience-item">
+            <div class="experience-header">
+                <span class="company-name">Freight Tiger</span>
+                <span class="date-range">Sept 2024 to Present</span>
+            </div>
+            <div class="job-title">Product Manager</div>
+            <div class="experience-details">
+                <p>Managed the ePOD & Freight Invoicing modules for a TMS (Transportation Management System) platform serving <strong>8</strong> enterprise clients</p>
+                <ul>
+                    <li>Collaborated with an <strong>8</strong>-member product team to ship <strong>50+</strong> enhancements to contribute towards module ARR of <strong>$200k</strong> ARR</li>
+                    <li>Strategised and developed the roadmap for ePOD and Freight Invoicing modules to align with the enterprise revenue goals</li>
+                    <li>Built <strong>10+</strong> POCs & Prototypes using Cursor AI, including a Demand Publishing Dashboard for the Carrier Matching Vertical</li>
+                    <li>Conducted <strong>4</strong> on-ground research visits across <strong>3</strong> cities to understand driver & transporter behavior at distribution depots</li>
+                    <li>Drove <strong>113%</strong> growth in ePOD adoption by solving enterprise pain points for Asian Paints, Tata Motors, Kellogg's, CEAT, etc.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="experience-item">
+            <div class="experience-header">
+                <span class="company-name">Kuberanix</span>
+                <span class="date-range">Aug 2023 to Present</span>
+            </div>
+            <div class="job-title">Founder and Product Manager</div>
+            <div class="experience-details">
+                <p>Started a product building factory to help businesses by providing brand identity design, UI/UX design and software development services.</p>
+                <ul>
+                    <li>Built and led a <strong>6</strong> member team to ship <strong>8</strong> projects worth ~<strong>$12,000</strong> across fashion, real estate, finance & software industries</li>
+                    <li>Pearmock - Created a gamified community driven platform for product managers having <strong>350+</strong> users from <strong>10+</strong> countries</li>
+                    <li>Boldprop - Launched an AI powered client proposal writing application and raised investment interest from GrowthAXL</li>
+                    <li>Single handedly open sourced <strong>40+</strong> working prototypes of real world problem solving micro saas ideas leveraging AI Agents</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="experience-item">
+            <div class="experience-header">
+                <span class="company-name">Urban Company</span>
+                <span class="date-range">May 2022 to Sep 2023</span>
+            </div>
+            <div class="job-title">Associate Product Manager</div>
+            <div class="experience-details">
+                <ul>
+                    <li>Managed <strong>$5.4</strong> million worth of loan disbursal by leading <strong>3</strong> loan products (home loans, working capital and personal loans)</li>
+                    <li>Led a notable partner NPS increase from <strong>-2%</strong> to <strong>25%</strong> in <strong>1</strong> month in UAE. Owned earnings and payouts in India, UAE & Singapore</li>
+                    <li>Increased insurance coverage to <strong>100%</strong> active base of ~<strong>50k</strong> partners and resolved compliance & regulatory issues in internal audits</li>
+                    <li>Led relations with <strong>6</strong> third-party vendors, liaising with key stakeholders from leading fintech and insurance companies</li>
+                    <li>Developed a help centre and launched an out of stock feature, leading to <strong>3%</strong> gain in fulfilment rate of handyman products</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="experience-item">
+            <div class="experience-header">
+                <span class="company-name">Lessonpal</span>
+                <span class="date-range">Dec 2019 to Sep 2021</span>
+            </div>
+            <div class="job-title">Product Management Intern</div>
+            <div class="experience-details">
+                <ul>
+                    <li>Led a global cross-functional team to deliver <strong>20+</strong> features, established the key UI/UX workflows & biweekly release processes</li>
+                    <li>Managed an end-to-end payment infrastructure update saving <strong>2%</strong> on each payout. Owned purchases and payout flows</li>
+                    <li>Improved tutor onboarding time from <strong>24+</strong> hours to under <strong>3</strong> hours with the launch of an in-app intro video recording feature</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="resume-card">
+        <div class="card-header">
+            <i class="ph ph-lightbulb"></i>
+            <h2>Projects & POCs</h2>
+        </div>
+        
+        <div class="experience-item">
+            <div class="experience-header">
+                <span class="company-name">Kyurations</span>
+            </div>
+            <div class="experience-details">
+                <p>General purpose space for your digitally saved items where AI creates lists that you can chat with, share and sell.</p>
+                <ul>
+                    <li>Conducted a month long market research by collecting data from <strong>100+</strong> participants and <strong>10+</strong> hours of user interviews</li>
+                    <li>Convinced and assembled a <strong>5</strong> person team including GenAI engineers working in Global Companies like Okta, PhonePe, etc</li>
+                    <li>Built the MVP comprising a Chrome Extension & a Web app and grew a <strong>70+</strong> person waitlist funneled into a WhatsApp Community</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="side-projects">
+            <div class="project-item">
+                <i class="ph ph-music-notes"></i>
+                <div>
+                    <strong>BeatScript:</strong> A Chrome Extension to show lyrics of song playing on YouTube. Works on <strong>25M+</strong> Songs. Javascript, Python, GPT-4
+                </div>
+            </div>
+            <div class="project-item">
+                <i class="ph ph-figma-logo"></i>
+                <div>
+                    <strong>Keyflow:</strong> Figma Plugin to automatically set up new files with organised & labeled empty frames and font & color styles. <strong>40+</strong> users
+                </div>
+            </div>
+            <div class="project-item">
+                <i class="ph ph-robot"></i>
+                <div>
+                    <strong>RippleReach:</strong> An AI Agent to conduct cold outreach to large lead lists over email. Portfolio, Profile & Calendar Integrations
+                </div>
+            </div>
+            <div class="project-item">
+                <i class="ph ph-newspaper"></i>
+                <div>
+                    <strong>Rocket Bulletin:</strong> An Automated Newsletter serving only the most important news in preferred niche from scanning <strong>500+</strong> sources
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="resume-card">
+        <div class="card-header">
+            <i class="ph ph-trophy"></i>
+            <h2>Achievements</h2>
+        </div>
+        
+        <div class="experience-item">
+            <div class="experience-header">
+                <span class="company-name">India Australia Circular Economy Hackathon 2021</span>
+                <span class="date-range">Winner out of <strong>750+</strong> teams</span>
+            </div>
+            <div class="experience-details">
+                <ul>
+                    <li>Developed <strong>100%</strong> biodegradable food containers to replace the traditional plastic containers used in the food delivery supply chain</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="experience-item">
+            <div class="experience-header">
+                <span class="company-name">InterIIT Technology General Championship 2021</span>
+                <span class="date-range">Winner out of <strong>22</strong> IITs</span>
+            </div>
+            <div class="experience-details">
+                <ul>
+                    <li>Led the Gold winning team for Silicon Labs Sociopreneur Challenge and designed a IoT based monitoring system for Trucks</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="resume-card">
+        <div class="card-header">
+            <i class="ph ph-wrench"></i>
+            <h2>Skills</h2>
+        </div>
+        
+        <div class="skills-section">
+            <div class="skill-category">
+                <h4><i class="ph ph-code"></i> Software</h4>
+                <div class="skill-chips">
+                    <span class="skill-chip">Prompt Engineering</span>
+                    <span class="skill-chip">Cursor</span>
+                    <span class="skill-chip">Figma API</span>
+                    <span class="skill-chip">Framer</span>
+                    <span class="skill-chip">SQL</span>
+                    <span class="skill-chip">Google Workspace</span>
+                    <span class="skill-chip">MS Office Suite</span>
+                    <span class="skill-chip">Google Analytics</span>
+                    <span class="skill-chip">Amplitude</span>
+                    <span class="skill-chip">Jira</span>
+                    <span class="skill-chip">LogRocket</span>
+                    <span class="skill-chip">Metabase</span>
+                    <span class="skill-chip">Azure AI & VM</span>
+                    <span class="skill-chip">GCP</span>
+                    <span class="skill-chip">Vercel</span>
+                    <span class="skill-chip">Web Scraping</span>
+                    <span class="skill-chip">Agentic SaaS</span>
+                    <span class="skill-chip">Midjourney</span>
+                </div>
+            </div>
+            <div class="skill-category">
+                <h4><i class="ph ph-truck"></i> Logistics</h4>
+                <div class="skill-chips">
+                    <span class="skill-chip">Lepton APIs</span>
+                    <span class="skill-chip">SAP & ERP</span>
+                    <span class="skill-chip">APIs and Webhooks</span>
+                    <span class="skill-chip">TMS</span>
+                    <span class="skill-chip">ePOD</span>
+                    <span class="skill-chip">Freight Invoicing</span>
+                    <span class="skill-chip">Compliance</span>
+                    <span class="skill-chip">Carrier Matching</span>
+                </div>
+            </div>
+            <div class="skill-category">
+                <h4><i class="ph ph-kanban"></i> Product Management</h4>
+                <div class="skill-chips">
+                    <span class="skill-chip">Stakeholder Management</span>
+                    <span class="skill-chip">Product Execution</span>
+                    <span class="skill-chip">UI/UX Design</span>
+                    <span class="skill-chip">Fintech</span>
+                    <span class="skill-chip">Edtech</span>
+                    <span class="skill-chip">Marketplaces</span>
+                    <span class="skill-chip">Freight Logistics</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="resume-card">
+        <div class="card-header">
+            <i class="ph ph-graduation-cap"></i>
+            <h2>Education</h2>
+        </div>
+        
+        <div class="education-item">
+            <div class="school-name">Indian Institute of Technology (IIT), Kharagpur</div>
+            <div class="degree-info">Ocean Engineering and Naval Architecture, B.Tech + M.Tech</div>
+            <div class="degree-info">GPA: <strong>8.53</strong>/10 | 2017 - 2022</div>
+        </div>
+    </div>
+
+    <div class="resume-card">
+        <div class="card-header">
+            <i class="ph ph-activity"></i>
+            <h2>Extra Curriculars</h2>
+        </div>
+        
+        <div class="experience-details">
+            <div class="extra-item">
+                <i class="ph ph-youtube-logo"></i>
+                <div>Content creator at Kyuriorsity with Krishna YouTube channel and mentoring <strong>20+</strong> PMs in job search and work methodologies 2025</div>
+            </div>
+            <div class="extra-item">
+                <i class="ph ph-paint-brush"></i>
+                <div>Headed Gold winning Fine arts Team in Sketching event of the Social & Cultural General Championship IIT Kharagpur 2018</div>
+            </div>
+            <div class="extra-item">
+                <i class="ph ph-users-three"></i>
+                <div>Mentored a <strong>14</strong> member team, conducted meetings & brainstorming sessions for Tech. General Championship IIT Kharagpur 2018</div>
+            </div>
+            <div class="extra-item">
+                <i class="ph ph-sparkle"></i>
+                <div>Led the on ground artwork team collaboration to win the Silver winning design work at Illumination IIT Kharagpur 2018</div>
+            </div>
+            <div class="extra-item">
+                <i class="ph ph-pen-nib"></i>
+                <div>Created the logo design and brand identity for an early stage startup which raised <strong>$180k</strong> in seed funding after brand design</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleShareMenu() {
+    const shareMenu = document.getElementById('shareMenu');
+    const shareBtn = document.getElementById('shareBtn');
+    
+    shareMenu.classList.toggle('active');
+    
+    // Optional: Add rotation animation to the share icon
+    if (shareMenu.classList.contains('active')) {
+        shareBtn.style.transform = 'rotate(90deg)';
+    } else {
+        shareBtn.style.transform = 'rotate(0deg)';
+    }
+}
+
+// Close share menu when clicking outside
+document.addEventListener('click', function(event) {
+    const shareMenu = document.getElementById('shareMenu');
+    const shareBtn = document.getElementById('shareBtn');
+    
+    if (!event.target.closest('.resume-actions') && shareMenu.classList.contains('active')) {
+        shareMenu.classList.remove('active');
+        shareBtn.style.transform = 'rotate(0deg)';
+    }
+});
+
+function copyLink() {
+    const copyBtn = document.getElementById('copyBtn');
+    const snackbar = document.getElementById('snackbar');
+    const originalIcon = copyBtn.innerHTML;
+    const textToCopy = window.location.href;
+
+    // Create temporary input element
+    const tempInput = document.createElement('input');
+    tempInput.value = textToCopy;
+    document.body.appendChild(tempInput);
+    
+    // Try modern clipboard API first
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(textToCopy)
+            .then(showSuccess)
+            .catch(tryLegacyMethod);
+    } else {
+        tryLegacyMethod();
+    }
+
+    // Remove temporary input
+    document.body.removeChild(tempInput);
+
+    function tryLegacyMethod() {
+        try {
+            // Select the text
+            tempInput.select();
+            tempInput.setSelectionRange(0, 99999); // For mobile devices
+            
+            // Copy the text
+            document.execCommand('copy');
+            showSuccess();
+        } catch (err) {
+            showError();
+        }
+    }
+
+    function showSuccess() {
+        copyBtn.innerHTML = '<i class="ph ph-check"></i>';
+        snackbar.classList.add('show');
+        
+        setTimeout(() => {
+            copyBtn.innerHTML = originalIcon;
+            snackbar.classList.remove('show');
+        }, 2000);
+    }
+
+    function showError() {
+        console.error('Failed to copy link');
+        copyBtn.innerHTML = '<i class="ph ph-x"></i>';
+        
+        setTimeout(() => {
+            copyBtn.innerHTML = originalIcon;
+        }, 2000);
+    }
+}
+</script>
+{% endblock %}
+

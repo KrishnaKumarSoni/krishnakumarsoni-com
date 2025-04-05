@@ -1,0 +1,74 @@
+/* Bongo component styles */
+
+.bongo-container {
+    display: flex;
+    justify-content: flex-start;
+    gap: 1.6rem;
+    margin-bottom: 2.75rem;
+    width: 100%;
+    padding-left: 0;
+    margin-left: -2px;
+}
+
+.bongo {
+    cursor: pointer;
+    transition: transform 0.1s ease;
+    width: 96px;
+    height: 96px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bongo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.bongo:active, 
+.bongo.playing {
+    transform: scale(0.95);
+}
+
+.bongo-container {
+        gap: 0.8rem;
+        margin-bottom: 2rem;
+    }
+
+.bongo {
+        width: 64px;
+        height: 64px;
+    }
+
+.bongo-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.key-hint {
+    font-size: 0.7rem;
+    color: #999;
+    font-weight: 400;
+    opacity: 0.6;
+    text-transform: lowercase;
+    letter-spacing: 0.02em;
+}
+
+.key-hint {
+        font-size: 0.65rem;
+    }
+
+.bongo-container {
+        padding: 0;
+    }
+
+.bongo, [role="button"], [tabindex="0"] {
+    outline: none;
+}
+
+.bongo:focus, [role="button"]:focus, [tabindex="0"]:focus {
+    outline: none;
+}

@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Offerings{% endblock %}
+
+{% block content %}
+<div class="container">
+    <section class="offerings-section">
+        <h1>Offerings</h1>
+
+        <div class="cart-widget">
+            <div class="cart-widget-content">
+                <div class="cart-left">
+                    <i class="ph ph-shopping-cart"></i>
+                    <span class="cart-count">1</span>
+                </div>
+                <div class="cart-right">
+                    <div class="pay-container">
+                        <button class="pay-button">Pay Now</button>
+                        <div class="email-input-container">
+                            <button class="back-button">
+                                <i class="ph ph-caret-left"></i>
+                            </button>
+                            <input type="email" class="email-input" placeholder="Enter your email">
+                            <button class="submit-email">
+                                <i class="ph ph-paper-plane-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <span class="total-price">₹0</span>
+                    <button class="expand-cart">
+                        <i class="ph ph-caret-down"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="cart-details">
+                <div class="cart-items"></div>
+                <div class="cart-total">
+                    <span>Total</span>
+                    <span class="total-amount">₹0</span>
+                </div>
+            </div>
+            <div class="thank-you-banner">
+                <span>Thank you for showing interest. We will connect with you soon.</span>
+                <button class="close-banner">
+                    <i class="ph ph-x"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="products-categories">
+            <div class="products-grid">
+                <!-- Products will be loaded via JavaScript -->
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block footer_scripts %}
+<script src="{{ url_for('static', filename='js/products_config.js') }}"></script>
+<script src="{{ url_for('static', filename='js/offerings.js') }}"></script>
+<script>
+    // This script handles rendering the products from the config
+    document.addEventListener('DOMContentLoaded', function() {
+        const productGrid = document.querySelector('.products-grid');
+        
+        // Get cart items from localStorage
+        const cartItems = new Set(JSON.parse(localStorage.getItem('cartItems')) || []);
+        
+        // Create product cards for all products
+        PRODUCTS.forEach(product => {
+            const productCard = document.createElement('div');
+            productCard.className = 'product-card';
+            productCard.dataset.id = product.id;
+            
+            // Check if this product is in the cart
+            const isSelected = cartItems.has(product.id);
+            if (isSelected) {
+                productCard.classList.add('selected');
+            }
+            
+            // Image path - use placeholder.jpg if image doesn't exist or is not specified
+            const imagePath = product.image ? 
+                `{{ url_for('static', filename='images/') }}${product.image}` : 
+                `{{ url_for('static', filename='images/placeholder.jpg') }}`;
+            
+            productCard.innerHTML = `
+                <div class="product-image">
+                    <img src="${imagePath}" alt="${product.title}" onerror="this.src='{{ url_for('static', filename='images/placeholder.jpg') }}'; this.classList.add('placeholder-img');">
+                </div>
+                <div class="product-category ${product.type}">
+                    ${product.type.charAt(0).toUpperCase() + product.type.slice(1)}
+                </div>
+                <div class="product-content">
+                    <h3>${product.title}</h3>
+                    <p>${product.description}</p>
+                </div>
+                <div class="card-footer">
+                    <button class="add-to-cart" data-product="${product.id}" aria-label="Add ${product.title} to cart">
+                        <i class="ph ${isSelected ? 'ph-check' : 'ph-shopping-cart-simple'}"></i> ${isSelected ? 'Selected' : 'Add to Cart'}
+                    </button>
+                </div>
+            `;
+            
+            productGrid.appendChild(productCard);
+        });
+        
+        // Set up event listeners for add to cart buttons
+        document.querySelectorAll('.add-to-cart').forEach(button => {
+            button.addEventListener('click', function() {
+                const productId = this.dataset.product;
+                const productCard = this.closest('.product-card');
+                
+                // Toggle selected state
+                if (productCard.classList.contains('selected')) {
+                    productCard.classList.remove('selected');
+                    this.innerHTML = '<i class="ph ph-shopping-cart-simple"></i> Add to Cart';
+                    
+                    // Trigger the equivalent of unchecking a checkbox
+                    const event = new CustomEvent('product:removed', {
+                        detail: { productId }
+                    });
+                    document.dispatchEvent(event);
+                } else {
+                    productCard.classList.add('selected');
+                    this.innerHTML = '<i class="ph ph-check"></i> Selected';
+                    
+                    // Trigger the equivalent of checking a checkbox
+                    const event = new CustomEvent('product:added', {
+                        detail: { productId }
+                    });
+                    document.dispatchEvent(event);
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

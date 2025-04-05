@@ -1,0 +1,23 @@
+/* Main CSS file that imports all modular components */
+
+/* Base styles */
+@import 'base.css';
+
+/* Layout components */
+@import 'navigation.css';
+@import 'footer.css';
+
+/* Hero and page sections */
+@import 'hero.css';
+@import 'page-sections.css';
+
+/* UI components */
+@import 'bongo.css';
+@import 'buttons.css';
+@import 'cart.css';
+@import 'products.css';
+
+/* Page-specific styles */
+@import 'home.css';
+@import 'offerings.css';
+@import 'resume.css';

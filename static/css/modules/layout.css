@@ -1,0 +1,24 @@
+/* Layout containers */
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+.container {
+    padding-left: 2rem;
+}
+
+.content-width {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.container {
+        padding: 0 1.5rem;
+    }
+
+.content-width {
+        margin-bottom: var(--nav-height);
+    }

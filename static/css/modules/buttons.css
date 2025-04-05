@@ -1,0 +1,173 @@
+/* Button styles */
+
+.connect-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.875rem 1.75rem;
+    background: linear-gradient(135deg, #e67e22 0%, #D35400 100%);
+    color: var(--white);
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 500;
+    transform-style: preserve-3d;
+    transform: translateZ(0);
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 0 0 #a0400c,
+                0 5px 15px rgba(211, 84, 0, 0.15);
+}
+
+.connect-btn:hover {
+    background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+    box-shadow: 0 4px 0 0 #a0400c,
+                0 8px 20px rgba(211, 84, 0, 0.2);
+}
+
+.connect-btn:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 0 #a0400c,
+                0 2px 8px rgba(211, 84, 0, 0.15);
+}
+
+.connect-btn i {
+    margin-left: 0.5rem;
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+.visit-button {
+    display: inline-block;
+    padding: 0.75rem 2rem;
+    background: linear-gradient(135deg, #e67e22 0%, #D35400 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 500;
+    transform-style: preserve-3d;
+    transform: translateZ(0);
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 0 0 #a0400c,
+                0 5px 15px rgba(211, 84, 0, 0.15);
+    position: absolute;
+    bottom: 2rem;
+    left: 2rem;
+}
+
+.visit-button:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 0 #a0400c,
+                0 2px 8px rgba(211, 84, 0, 0.15);
+}
+
+.visit-button:hover {
+    background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+    box-shadow: 0 4px 0 0 #a0400c,
+                0 8px 20px rgba(211, 84, 0, 0.2);
+}
+
+.visit-button {
+        bottom: 1.5rem;
+        left: 1.5rem;
+        padding: 0.6rem 1.75rem;
+    }
+
+.pay-button {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #e67e22 0%, #D35400 100%);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    opacity: 1;
+    transform: scale(1);
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+    box-shadow: 0 2px 4px rgba(211, 84, 0, 0.2);
+    text-transform: uppercase;
+    font-size: 0.95rem;
+    overflow: hidden;
+}
+
+.pay-button:hover {
+    background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 3px 6px rgba(211, 84, 0, 0.2);
+}
+
+.pay-button:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 2px rgba(211, 84, 0, 0.2);
+}
+
+.pay-button {
+        font-size: 0.9rem;
+        padding: 0.7rem 1rem;
+    }
+
+.add-to-cart {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.75rem;
+    background: linear-gradient(135deg, #e67e22 0%, #D35400 100%);
+    color: white;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    border-radius: 16px;
+    box-shadow: 0 2px 4px rgba(211, 84, 0, 0.2);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    overflow: hidden;
+    transform: translateZ(0);
+    width: 100%;
+    max-width: 100%;
+}
+
+.add-to-cart:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 3px 6px rgba(211, 84, 0, 0.25);
+}
+
+.add-to-cart:hover::before {
+    transform: translateX(100%);
+}
+
+.add-to-cart:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 2px rgba(211, 84, 0, 0.2);
+}
+
+.add-to-cart {
+    background: white;
+    color: var(--burnt-orange);
+    border: 2px solid var(--burnt-orange);
+    box-shadow: 0 1px 3px rgba(211, 84, 0, 0.1);
+}
+
+.add-to-cart:hover {
+    background: rgba(211, 84, 0, 0.05);
+    box-shadow: 0 2px 5px rgba(211, 84, 0, 0.15);
+}
+
+.add-to-cart {
+    background: linear-gradient(135deg, #e67e22 0%, #D35400 100%);
+    color: white;
+    border: none;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 2px 4px rgba(211, 84, 0, 0.2);
+}
+
+.add-to-cart i {
+    font-size: 1.2rem;
+    margin-right: 0.75rem;
+    transition: transform 0.3s ease;
+}

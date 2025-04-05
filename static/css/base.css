@@ -1,0 +1,108 @@
+/* Base styles */
+
+:root {
+  /* Color system */
+  --white: #ffffff;
+  --black: #111111;
+  --burnt-orange: #D35400;
+  --burnt-orange-light: #FF7D2A;
+  --burnt-orange-dark: #B24600;
+  
+  /* Color variations for funky shades */
+  --funky-teal: #13B0A5;
+  --funky-purple: #9D4EDD;
+  --funky-yellow: #FFD60A;
+  --funky-pink: #FF5A7E;
+  
+  /* Text colors */
+  --text-dark: #2C3E50;
+  --text-medium: #5D6D7E;
+  --text-light: #8395A7;
+  
+  /* Layout */
+  --nav-height: 60px;
+  --border-radius-sm: 12px;
+  --border-radius-md: 20px;
+  --border-radius-lg: 32px;
+  --spacing-unit: 8px;
+  
+  /* Transitions */
+  --transition-fast: 0.2s ease;
+  --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--white);
+  color: var(--text-dark);
+  line-height: 1.6;
+  min-height: 100vh;
+  padding-bottom: 0;
+  padding-top: var(--nav-height);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Modern reset styles */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Remove focus outlines for buttons and interactive elements */
+button, a, input, select, textarea, [role="button"], [tabindex]:not([tabindex="-1"]) {
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+  touch-action: manipulation;
+}
+
+button:focus, a:focus, input:focus, select:focus, textarea:focus, 
+[role="button"]:focus, [tabindex]:not([tabindex="-1"]):focus {
+  outline: none;
+}
+
+/* iOS-specific fixes */
+input, textarea {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+/* Fix for iOS Safari to remove blue tap highlight */
+@media (pointer: coarse) {
+  a, button, [role="button"] {
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-unit);
+}
+
+.content-width {
+  max-width: 900px;
+  margin: 0 auto;
+} 
