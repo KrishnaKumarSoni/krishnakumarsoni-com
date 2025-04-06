@@ -1,6 +1,7 @@
 Flask==2.0.1
 python-dotenv==1.0.1
 Markdown==3.3.4
+importlib-metadata==4.13.0
 PyYAML==6.0.1
 python-frontmatter==1.0.1
 Werkzeug==2.0.1 
