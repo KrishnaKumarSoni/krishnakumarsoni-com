@@ -72,10 +72,14 @@ def index():
 
 @app.route('/offerings')
 def offerings():
-    # Read products from YAML config
-    with open('config/products.yaml', 'r') as file:
-        config = yaml.safe_load(file)
-    return render_template('pages/offerings.html', products=config['products'])
+    try:
+        # Read products from YAML config
+        with open('config/products.yaml', 'r') as file:
+            config = yaml.safe_load(file)
+        return render_template('pages/offerings.html', products=config['products'])
+    except (FileNotFoundError, yaml.YAMLError) as e:
+        app.logger.error(f"Error loading products config: {str(e)}")
+        return render_template('500.html'), 500
 
 @app.route('/solutions')
 def solutions():
