@@ -5,57 +5,76 @@
 {% block content %}
 <style>
     .solutions-section {
-        padding: 2rem 0;
+        padding: 1.6rem 0;
     }
 
     .solutions-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 2rem;
-        padding: 2rem 0;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 1.6rem;
+        padding: 1.6rem 0;
     }
     
     .solution-card {
         background: #fff;
         border: 1px solid #eee;
-        padding: 1.5rem;
-        border-radius: 16px;
+        padding: 1.2rem;
+        border-radius: 12px;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
     }
     
     .solution-image {
         width: 100%;
         aspect-ratio: 16/9;
         background: #f0f0f0;
-        margin-bottom: 1rem;
-        border-radius: 16px;
+        margin-bottom: 0.8rem;
+        border-radius: 12px;
     }
     
     .solution-card h3 {
-        margin: 0 0 1rem 0;
-        font-size: 1.5rem;
+        margin: 0 0 0.8rem 0;
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
     }
     
     .solution-card p {
-        margin: 0 0 1.5rem 0;
-        line-height: 1.6;
+        margin: 0 0 4rem 0;
+        line-height: 1.5;
         color: #666;
+        font-size: 0.9rem;
     }
     
     .try-button {
-        display: inline-block;
-        padding: 0.75rem 1.5rem;
-        background-color: #D35400;
-        color: white;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.4rem 1rem;
+        color: #D35400;
         text-decoration: none;
-        border: none;
+        border: 1.5px solid #D35400;
         cursor: pointer;
-        font-size: 1rem;
-        transition: opacity 0.2s;
-        border-radius: 16px;
+        font-size: 0.85rem;
+        transition: all 0.2s;
+        border-radius: 10px;
+        position: absolute;
+        bottom: 1.2rem;
+        left: 1.2rem;
+        right: 1.2rem;
+        justify-content: center;
+        background: transparent;
     }
     
     .try-button:hover {
-        opacity: 0.9;
+        background: rgba(211, 84, 0, 0.1);
+    }
+
+    .try-button i {
+        font-size: 0.9rem;
     }
 </style>
 
@@ -65,65 +84,83 @@
         <div class="solutions-grid">
             <div class="solution-card">
                 <div class="solution-image"></div>
-                <h3>Beatscript</h3>
+                <h3><i class="ph ph-music-notes"></i>Beatscript</h3>
                 <p>Don't yap the wrong words. Use Beatscript. Get Lyrics to any song on YouTube.</p>
-                <a href="https://github.com/KrishnaKumarSoni/beatscript/" class="try-button" target="_blank">Check out</a>
+                <a href="https://github.com/KrishnaKumarSoni/beatscript/" class="try-button" target="_blank">
+                    Check out <i class="ph ph-arrow-square-out"></i>
+                </a>
             </div>
             
             <div class="solution-card">
                 <div class="solution-image"></div>
-                <h3>Borescroll X</h3>
+                <h3><i class="ph ph-scroll"></i>Borescroll X</h3>
                 <p>Too lazy to scroll on X? Me too. Just install & Borescroll!. No Login or sign up required.</p>
-                <a href="https://chromewebstore.google.com/detail/borescroll-lazy-scroller/pajamockneobkfjkmgpbhlmcaabigple" class="try-button" target="_blank">Check out</a>
+                <a href="https://chromewebstore.google.com/detail/borescroll-lazy-scroller/pajamockneobkfjkmgpbhlmcaabigple" class="try-button" target="_blank">
+                    Check out <i class="ph ph-arrow-square-out"></i>
+                </a>
             </div>
             
             <div class="solution-card">
                 <div class="solution-image"></div>
-                <h3>RippleSearch</h3>
+                <h3><i class="ph ph-magnifying-glass"></i>RippleSearch</h3>
                 <p>Generate large lead lists from Google Maps with contact information and business insights!</p>
-                <a href="https://github.com/krishnakumarsoni/ripplesearch" class="try-button" target="_blank">Check out</a>
+                <a href="https://github.com/krishnakumarsoni/ripplesearch" class="try-button" target="_blank">
+                    Check out <i class="ph ph-arrow-square-out"></i>
+                </a>
             </div>
             
             <div class="solution-card">
                 <div class="solution-image"></div>
-                <h3>RippleReach</h3>
+                <h3><i class="ph ph-handshake"></i>RippleReach</h3>
                 <p>Perform hyper personalised warm outreach and convert leads while you sleep peacefully!</p>
-                <a href="https://github.com/krishnakumarsoni/ripplereach" class="try-button" target="_blank">Check out</a>
+                <a href="https://github.com/krishnakumarsoni/ripplereach" class="try-button" target="_blank">
+                    Check out <i class="ph ph-arrow-square-out"></i>
+                </a>
             </div>
             
             <div class="solution-card">
                 <div class="solution-image"></div>
-                <h3>Pearmock</h3>
+                <h3><i class="ph ph-users-three"></i>Pearmock</h3>
                 <p>A community driven platform for product managers to build connections, practice case interviews and compete among each other for exciting prices!</p>
-                <a href="https://pearmock.com" class="try-button" target="_blank">Check out</a>
+                <a href="https://pearmock.com" class="try-button" target="_blank">
+                    Check out <i class="ph ph-arrow-square-out"></i>
+                </a>
             </div>
             
             <div class="solution-card">
                 <div class="solution-image"></div>
-                <h3>Boldprop</h3>
+                <h3><i class="ph ph-file-text"></i>Boldprop</h3>
                 <p>Helps agencies and freelancers to quickly write a proposal for the clients by just providing the meeting transcript or the client brief.</p>
-                <a href="https://www.boldprop.in/" class="try-button" target="_blank">Check out</a>
+                <a href="https://www.boldprop.in/" class="try-button" target="_blank">
+                    Check out <i class="ph ph-arrow-square-out"></i>
+                </a>
             </div>
             
             <div class="solution-card">
                 <div class="solution-image"></div>
-                <h3>Blogggles</h3>
+                <h3><i class="ph ph-article"></i>Blogggles</h3>
                 <p>Visit Blogggles and enter the public chat URL of your chat with ChatGPT. We'll take your chat and write a neat blog out of it!</p>
-                <a href="https://github.com/KrishnaKumarSoni/blog-from-gpt" class="try-button" target="_blank">Check out</a>
+                <a href="https://github.com/KrishnaKumarSoni/blog-from-gpt" class="try-button" target="_blank">
+                    Check out <i class="ph ph-arrow-square-out"></i>
+                </a>
             </div>
             
             <div class="solution-card">
                 <div class="solution-image"></div>
-                <h3>Bulk mailer</h3>
+                <h3><i class="ph ph-envelope"></i>Bulk mailer</h3>
                 <p>Connect your Sales Google Sheets with LinkedIn profile URLs and write 100 or even 1000 personalised cold emails with lead magnet for each on auto-pilot!</p>
-                <a href="https://github.com/KrishnaKumarSoni/bulk-cold-mailer" class="try-button" target="_blank">Check out</a>
+                <a href="https://github.com/KrishnaKumarSoni/bulk-cold-mailer" class="try-button" target="_blank">
+                    Check out <i class="ph ph-arrow-square-out"></i>
+                </a>
             </div>
             
             <div class="solution-card">
                 <div class="solution-image"></div>
-                <h3>Web Page Optimiser</h3>
+                <h3><i class="ph ph-chart-line-up"></i>Web Page Optimiser</h3>
                 <p>Enter the URL and get a detailed content and UI optimisation suggestions tailored to optimise your specific business goal.</p>
-                <a href="https://github.com/KrishnaKumarSoni/ui-design-analyser" class="try-button" target="_blank">Check out</a>
+                <a href="https://github.com/KrishnaKumarSoni/ui-design-analyser" class="try-button" target="_blank">
+                    Check out <i class="ph ph-arrow-square-out"></i>
+                </a>
             </div>
         </div>
     </section>
