@@ -58,8 +58,8 @@
                             class="product-image"
                         >
                     </div>
-                    <div class="product-category {{ product.type }}">
-                        {{ product.type|capitalize }}
+                    <div class="product-category" data-color="{{ product.category_color }}">
+                        {{ product.category|capitalize }}
                     </div>
                     <div class="product-content">
                         <h3>{{ product.title }}</h3>
@@ -82,6 +82,11 @@
 <script src="{{ url_for('static', filename='js/offerings.js') }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Set category colors
+        document.querySelectorAll('.product-category').forEach(category => {
+            category.style.backgroundColor = category.dataset.color;
+        });
+
         // Get cart items from localStorage
         const cartItems = new Set(JSON.parse(localStorage.getItem('cartItems')) || []);
         
