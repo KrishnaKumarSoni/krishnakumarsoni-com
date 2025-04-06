@@ -72,12 +72,10 @@ def index():
 
 @app.route('/offerings')
 def offerings():
-    # Get offerings data from markdown
-    offerings_data = get_offerings_data()
-    
-    return render_template('pages/offerings.html', 
-                         active_page='offerings',
-                         offerings=offerings_data)
+    # Read products from YAML config
+    with open('config/products.yaml', 'r') as file:
+        config = yaml.safe_load(file)
+    return render_template('pages/offerings.html', products=config['products'])
 
 @app.route('/solutions')
 def solutions():
