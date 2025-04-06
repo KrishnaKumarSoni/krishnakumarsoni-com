@@ -65,6 +65,27 @@ def get_offerings_data():
     
     return offerings
 
+def get_config_path(filename):
+    """Get the absolute path to a config file"""
+    # Try different possible locations
+    possible_paths = [
+        os.path.join(os.getcwd(), 'config', filename),  # Local development
+        os.path.join(os.path.dirname(__file__), 'config', filename),  # Relative to app.py
+        os.path.join('/var/task/config', filename),  # Vercel serverless
+    ]
+    
+    app.logger.debug(f"Current working directory: {os.getcwd()}")
+    app.logger.debug(f"__file__ directory: {os.path.dirname(__file__)}")
+    
+    for path in possible_paths:
+        app.logger.debug(f"Trying path: {path}")
+        if os.path.exists(path):
+            app.logger.debug(f"Found config at: {path}")
+            return path
+    
+    app.logger.error(f"Config file {filename} not found. Tried paths: {possible_paths}")
+    raise FileNotFoundError(f"Config file {filename} not found in any of the expected locations")
+
 @app.route('/')
 def index():
     # Keep existing template rendering for home page since it has special interactive elements
@@ -73,11 +94,12 @@ def index():
 @app.route('/offerings')
 def offerings():
     try:
-        # Read products from YAML config
-        with open('config/products.yaml', 'r') as file:
+        # Read products from YAML config using the helper function
+        config_path = get_config_path('products.yaml')
+        with open(config_path, 'r') as file:
             config = yaml.safe_load(file)
         return render_template('pages/offerings.html', products=config['products'])
-    except (FileNotFoundError, yaml.YAMLError) as e:
+    except Exception as e:
         app.logger.error(f"Error loading products config: {str(e)}")
         return render_template('500.html'), 500
 

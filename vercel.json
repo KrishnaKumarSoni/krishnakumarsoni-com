@@ -4,36 +4,21 @@
         {
             "src": "app.py",
             "use": "@vercel/python"
-        },
-        {
-            "src": "static/**",
-            "use": "@vercel/static"
-        },
-        {
-            "src": "config/**",
-            "use": "@vercel/static"
         }
     ],
     "routes": [
-        {
-            "src": "/static/(.*)",
-            "dest": "/static/$1"
-        },
-        {
-            "src": "/config/(.*)",
-            "dest": "/config/$1"
-        },
         {
             "src": "/(.*)",
             "dest": "app.py"
         }
     ],
-    "buildCommand": "yarn build",
-    "devCommand": "yarn dev",
-    "installCommand": "yarn install",
-    "framework": "nextjs",
-    "regions": ["iad1"],
     "env": {
         "TRACKER_SCRIPT_NAME": "script.js"
+    },
+    "regions": ["iad1"],
+    "functions": {
+        "app.py": {
+            "includeFiles": "config/**"
+        }
     }
 } 
