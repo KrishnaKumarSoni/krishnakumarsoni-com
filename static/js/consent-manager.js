@@ -7,12 +7,16 @@ function initConsentManager() {
   // Ensure GTM dataLayer exists
   window.dataLayer = window.dataLayer || [];
   
-  // Wait a brief moment to ensure GTM has initialized
-  setTimeout(() => {
+  // Function to check if GTM is loaded
+  function isGTMLoaded() {
+    return window.google_tag_manager && window.google_tag_manager['GTM-WVZMW542'];
+  }
+  
+  // Function to initialize consent state
+  function initializeConsent() {
     // Check if consent was already given
     const hasConsent = localStorage.getItem('analytics_consent') === 'true';
     
-    // Set default consent state based on previous choices
     if (hasConsent) {
       // If consent was previously given, update GTM
       window.dataLayer.push({
@@ -23,6 +27,7 @@ function initConsentManager() {
         'personalization_storage': 'denied',
         'security_storage': 'granted'
       });
+      console.log('Consent granted - GTM updated');
     } else {
       // If no consent yet or consent denied, default to denied
       window.dataLayer.push({
@@ -33,14 +38,29 @@ function initConsentManager() {
         'personalization_storage': 'denied',
         'security_storage': 'granted' // Security cookies are always allowed
       });
-      
-      // Show the consent banner
+      console.log('No consent - showing banner');
       showConsentBanner();
     }
     
     // Check if consent has expired
     checkConsentExpiry();
-  }, 100); // Small delay to ensure GTM is ready
+  }
+  
+  // Wait for GTM to load before initializing consent
+  let attempts = 0;
+  const maxAttempts = 5;
+  const checkGTM = setInterval(() => {
+    attempts++;
+    if (isGTMLoaded()) {
+      clearInterval(checkGTM);
+      initializeConsent();
+      console.log('GTM loaded - consent initialized');
+    } else if (attempts >= maxAttempts) {
+      clearInterval(checkGTM);
+      console.error('GTM failed to load after ' + maxAttempts + ' attempts');
+      initializeConsent(); // Initialize anyway to ensure basic functionality
+    }
+  }, 1000);
 }
 
 // Show the cookie consent banner
