@@ -19,5 +19,13 @@
             "src": "/(.*)",
             "dest": "app.py"
         }
-    ]
+    ],
+    "buildCommand": "yarn build",
+    "devCommand": "yarn dev",
+    "installCommand": "yarn install",
+    "framework": "nextjs",
+    "regions": ["iad1"],
+    "env": {
+        "TRACKER_SCRIPT_NAME": "script.js"
+    }
 } 
