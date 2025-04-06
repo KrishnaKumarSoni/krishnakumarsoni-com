@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, request, redirect, url_for, flash
+from flask import Flask, render_template, jsonify, request, redirect, url_for, flash, send_from_directory
 from pathlib import Path
 import yaml
 import markdown
@@ -78,6 +78,11 @@ def offerings():
     return render_template('pages/offerings.html', 
                          active_page='offerings',
                          offerings=offerings_data)
+
+@app.route('/static/configurations/<path:filename>')
+def serve_configurations(filename):
+    # Serve files from the configurations directory in static
+    return send_from_directory('static/configurations', filename)
 
 @app.route('/solutions')
 def solutions():
