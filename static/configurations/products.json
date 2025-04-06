@@ -1,0 +1,85 @@
+{
+  "products": [
+    {
+      "id": "ai-product-consult",
+      "title": "AI-First Product Strategy",
+      "description": "Design and roadmap AI-native workflows, products, or tools for your enterprise use case. From LLM-powered automation to internal tool augmentation, get a strategic plan ready for execution.",
+      "category": "ai",
+      "type": "consultation",
+      "image": "placeholder.jpg",
+      "color": "#9D4EDD"
+    },
+    {
+      "id": "enterprise-mvp-roadmap",
+      "title": "MVP Planning & Rapid Roadmapping",
+      "description": "1-2 week deep dive to plan your next product module or MVP — from use case definition, feature prioritization, UX flows, and vendor stack recommendations.",
+      "category": "development",
+      "type": "consultation",
+      "image": "placeholder.jpg",
+      "color": "#D35400"
+    },
+    {
+      "id": "figma-infra-audit",
+      "title": "Design Ops & Figma Infra Audit",
+      "description": "Evaluate and streamline your team's Figma design workflows, reusable components, tokens, and design-to-dev handoff processes.",
+      "category": "design",
+      "type": "consultation",
+      "image": "placeholder.jpg",
+      "color": "#13B0A5"
+    },
+    {
+      "id": "ai-poc-delivery",
+      "title": "Custom AI Tool / POC Development",
+      "description": "Build a working AI prototype or workflow using GPT-4, automation scripts, and web UIs tailored to your specific business use case. Suitable for marketing ops, cold outreach, CRM enrichment, internal R&D, or support.",
+      "category": "ai",
+      "type": "development",
+      "image": "placeholder.jpg",
+      "color": "#9D4EDD"
+    },
+    {
+      "id": "fintech-product-squad",
+      "title": "Embedded Fintech Product Builder",
+      "description": "Launch or revamp B2B fintech workflows — insurance, lending, payouts, compliance. 2-8 week engagement with PRD, GTM support, and feature delivery guidance.",
+      "category": "fintech",
+      "type": "development",
+      "image": "placeholder.jpg",
+      "color": "#FFD60A"
+    },
+    {
+      "id": "figma-setup-ops",
+      "title": "Design System Setup & Deployment",
+      "description": "Ship your product design system in 4 weeks. Includes tokens, components, variant libraries, and developer handover.",
+      "category": "design",
+      "type": "development",
+      "image": "placeholder.jpg",
+      "color": "#13B0A5"
+    },
+    {
+      "id": "ai-enabled-chrome-extension",
+      "title": "AI-Powered Chrome Extension Build",
+      "description": "Ideate, design and deploy a production-ready browser extension that leverages LLMs for content, utility, or productivity use cases. Delivered in 3-6 weeks.",
+      "category": "ai",
+      "type": "development",
+      "image": "placeholder.jpg",
+      "color": "#9D4EDD"
+    },
+    {
+      "id": "enterprise-micro-saas",
+      "title": "Internal Micro SaaS for Ops/Field Teams",
+      "description": "Build lightweight internal tools to digitize operational processes (e.g. demand publishing, report automation, invoice tracker, compliance flows). Delivered in 2-6 weeks using fast dev stack.",
+      "category": "operations",
+      "type": "development",
+      "image": "placeholder.jpg",
+      "color": "#FF5A7E"
+    },
+    {
+      "id": "gtm-playbook-sprint",
+      "title": "B2B SaaS GTM Sprint",
+      "description": "Run a GTM sprint for your newly built tool. Includes positioning, founder-led sales narrative, lead scraping automation, and outreach messaging using GPT agents.",
+      "category": "marketing",
+      "type": "development",
+      "image": "placeholder.jpg",
+      "color": "#B24600"
+    }
+  ]
+}

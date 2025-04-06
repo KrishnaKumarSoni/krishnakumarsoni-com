@@ -57,11 +57,11 @@
 {% endblock %}
 
 {% block footer_scripts %}
-<script src="{{ url_for('static', filename='js/products_config.js') }}"></script>
+<script src="{{ url_for('static', filename='js/load-products.js') }}"></script>
 <script src="{{ url_for('static', filename='js/offerings.js') }}"></script>
 <script>
     // This script handles rendering the products from the config
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('products:loaded', function() {
         const productGrid = document.querySelector('.products-grid');
         
         // Get cart items from localStorage
@@ -84,11 +84,16 @@
                 `{{ url_for('static', filename='images/') }}${product.image}` : 
                 `{{ url_for('static', filename='images/placeholder.jpg') }}`;
             
+            // Apply custom category color if available
+            const categoryStyle = product.color ? 
+                `style="background-color: ${product.color}20; color: ${product.color};"` : 
+                `class="${product.type}"`;
+            
             productCard.innerHTML = `
                 <div class="product-image">
                     <img src="${imagePath}" alt="${product.title}" onerror="this.src='{{ url_for('static', filename='images/placeholder.jpg') }}'; this.classList.add('placeholder-img');">
                 </div>
-                <div class="product-category ${product.type}">
+                <div class="product-category" ${categoryStyle}>
                     ${product.type.charAt(0).toUpperCase() + product.type.slice(1)}
                 </div>
                 <div class="product-content">
