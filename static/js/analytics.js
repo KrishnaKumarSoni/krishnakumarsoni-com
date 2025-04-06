@@ -174,23 +174,38 @@ function sendPageView() {
     });
   } catch (e) {
     console.error('Error sending pageview:', e);
-    // Fallback to sendBeacon
+    // Fallback to sendBeacon with proper GA4 format
     if (navigator.sendBeacon) {
       const GA_MEASUREMENT_ID = 'G-8RPR9RZGKL';
+      const clientId = localStorage.getItem('ga_client_id') || generateClientId();
+      
+      // GA4 requires this format
       const payload = {
-        v: 2,
-        tid: GA_MEASUREMENT_ID,
-        t: 'pageview',
-        dl: window.location.href,
-        dt: document.title,
-        dr: document.referrer
+        client_id: clientId,
+        non_personalized_ads: true,
+        events: [{
+          name: 'page_view',
+          params: {
+            page_title: document.title,
+            page_location: window.location.href,
+            page_path: window.location.pathname,
+            engagement_time_msec: 100
+          }
+        }]
       };
       
       try {
-        navigator.sendBeacon(
-          'https://www.google-analytics.com/collect',
-          JSON.stringify(payload)
-        );
+        // Convert payload to base64 for GA4
+        const base64Payload = btoa(JSON.stringify(payload));
+        const url = `https://www.google-analytics.com/mp/collect?measurement_id=${GA_MEASUREMENT_ID}&api_secret=THuVFb0FQp2XzC1hPkLBvw`;
+        
+        // Use application/json content type
+        const blob = new Blob([JSON.stringify(payload)], {
+          type: 'application/json'
+        });
+        
+        navigator.sendBeacon(url, blob);
+        console.log('Sent pageview via sendBeacon');
       } catch (beaconError) {
         console.error('SendBeacon failed:', beaconError);
       }
@@ -198,29 +213,49 @@ function sendPageView() {
   }
 }
 
+// Generate a random client ID for GA4
+function generateClientId() {
+  const clientId = Math.floor(Math.random() * 10000000000) + '.' + Math.floor(Date.now() / 1000);
+  localStorage.setItem('ga_client_id', clientId);
+  return clientId;
+}
+
 // Setup fallback tracking using navigator.sendBeacon
 function setupFallbackTracking() {
   console.log('Setting up fallback tracking with sendBeacon');
   
-  // Create simple tracker using sendBeacon
+  // Generate client ID if not exists
+  const clientId = localStorage.getItem('ga_client_id') || generateClientId();
+  
+  // Create simple tracker using sendBeacon with GA4 format
   window.sendAnalyticsEvent = function(eventName, eventParams) {
     if (navigator.sendBeacon) {
       const GA_MEASUREMENT_ID = 'G-8RPR9RZGKL';
+      
+      // Format for GA4 Measurement Protocol
       const payload = {
-        v: 2,
-        tid: GA_MEASUREMENT_ID,
-        t: 'event',
-        ec: eventParams?.event_category || 'event',
-        ea: eventName,
-        el: eventParams?.event_label,
-        ev: eventParams?.value
+        client_id: clientId,
+        non_personalized_ads: true,
+        events: [{
+          name: eventName,
+          params: {
+            ...eventParams,
+            engagement_time_msec: 100
+          }
+        }]
       };
       
       try {
-        navigator.sendBeacon(
-          'https://www.google-analytics.com/collect',
-          JSON.stringify(payload)
-        );
+        // Endpoint for GA4
+        const url = `https://www.google-analytics.com/mp/collect?measurement_id=${GA_MEASUREMENT_ID}&api_secret=THuVFb0FQp2XzC1hPkLBvw`;
+        
+        // Use application/json content type
+        const blob = new Blob([JSON.stringify(payload)], {
+          type: 'application/json'
+        });
+        
+        navigator.sendBeacon(url, blob);
+        console.log(`Sent ${eventName} event via sendBeacon`);
         return true;
       } catch (e) {
         console.error('SendBeacon failed:', e);
