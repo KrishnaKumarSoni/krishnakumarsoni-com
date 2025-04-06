@@ -3,69 +3,14 @@
 {% block title %}Server Error{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="error-container">
-        <h1>500 - Server Error</h1>
-        <p>We're sorry, something went wrong while processing your request.</p>
-        
-        {% if error_message %}
-        <div class="error-details">
-            <h3>Error Details:</h3>
-            <pre>{{ error_message }}</pre>
-        </div>
-        {% endif %}
-        
-        <a href="/" class="btn">Go back to homepage</a>
+<div class="error-page">
+    <div class="container">
+        <h1>500</h1>
+        <p>Something went wrong on our end.</p>
+        <a href="{{ url_for('index') }}" class="home-link">
+            <i class="ph ph-house"></i>
+            Go back home
+        </a>
     </div>
 </div>
-{% endblock %}
-
-{% block footer_scripts %}
-<style>
-    .error-container {
-        max-width: 800px;
-        margin: 100px auto;
-        padding: 30px;
-        background-color: #fff;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        text-align: center;
-    }
-    
-    .error-container h1 {
-        color: #e74c3c;
-        margin-bottom: 20px;
-    }
-    
-    .error-details {
-        margin: 30px 0;
-        padding: 15px;
-        background-color: #f8f9fa;
-        border-radius: 6px;
-        text-align: left;
-    }
-    
-    .error-details pre {
-        white-space: pre-wrap;
-        overflow-x: auto;
-        margin: 0;
-        padding: 10px;
-        background: #f1f1f1;
-        border-radius: 4px;
-    }
-    
-    .btn {
-        display: inline-block;
-        padding: 10px 24px;
-        background-color: #3498db;
-        color: white;
-        text-decoration: none;
-        border-radius: 4px;
-        transition: background-color 0.3s;
-    }
-    
-    .btn:hover {
-        background-color: #2980b9;
-    }
-</style>
 {% endblock %} 
