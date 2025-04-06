@@ -90,75 +90,162 @@ function initializeGoogleAnalytics() {
   // Google Analytics 4 implementation - only runs in production
   const GA_MEASUREMENT_ID = 'G-8RPR9RZGKL'; // Updated with your actual GA4 measurement ID
   
-  // Clear any existing GA scripts to avoid duplication
-  const existingScripts = document.querySelectorAll('script[src*="googletagmanager"]');
-  existingScripts.forEach(script => script.remove());
-  
-  // Add Google Analytics script
-  const script = document.createElement('script');
-  script.async = true;
-  script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
-  script.onload = function() {
-    console.log('Google Analytics script loaded successfully');
-  };
-  script.onerror = function() {
-    console.error('Failed to load Google Analytics script');
-  };
-  document.head.appendChild(script);
-  
   // Initialize dataLayer and gtag function
   window.dataLayer = window.dataLayer || [];
-  function gtag() { 
-    console.log('gtag called with arguments:', arguments);
-    dataLayer.push(arguments); 
+  
+  // Create a more robust gtag function that handles CORS errors
+  function gtag() {
+    try {
+      dataLayer.push(arguments);
+    } catch (e) {
+      console.error('Error in gtag:', e);
+    }
   }
   window.gtag = gtag;
   
-  console.log('Setting up gtag');
-  gtag('js', new Date());
-  
-  // Check for existing consent
-  const hasConsent = localStorage.getItem('analytics_consent') === 'true';
-  console.log('User has consent:', hasConsent);
-  
-  // First, set default consent state
-  gtag('consent', 'default', {
-    'analytics_storage': hasConsent ? 'granted' : 'denied',
-    'ad_storage': 'denied'
-  });
-  
-  // Then configure the GA property
-  gtag('config', GA_MEASUREMENT_ID, {
-    'anonymize_ip': trackingConfig.privacy?.anonymize_ip || true,
-    'debug_mode': true // Enable debug mode for troubleshooting
-  });
-  
-  // Set up cookie consent handlers if required
-  if (trackingConfig.privacy?.cookie_consent_required && !hasConsent) {
-    setupCookieConsent();
+  // Add Google Analytics script with error handling
+  try {
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
+    script.onerror = function(e) {
+      console.error('Failed to load Google Analytics script:', e);
+      // Handle the error by using a more basic approach (navigator.sendBeacon)
+      setupFallbackTracking();
+    };
+    document.head.appendChild(script);
+    
+    console.log('Setting up gtag');
+    gtag('js', new Date());
+    
+    // Check for existing consent
+    const hasConsent = localStorage.getItem('analytics_consent') === 'true';
+    console.log('User has consent:', hasConsent);
+    
+    // First, set default consent state
+    gtag('consent', 'default', {
+      'analytics_storage': hasConsent ? 'granted' : 'denied',
+      'ad_storage': 'denied',
+      'wait_for_update': 500
+    });
+    
+    // Then configure the GA property
+    gtag('config', GA_MEASUREMENT_ID, {
+      'anonymize_ip': trackingConfig.privacy?.anonymize_ip || true,
+      'transport_type': 'beacon', // Use navigator.sendBeacon when possible
+      'debug_mode': true // Enable debug mode for troubleshooting
+    });
+    
+    // Set up cookie consent handlers if required
+    if (trackingConfig.privacy?.cookie_consent_required && !hasConsent) {
+      setupCookieConsent();
+    }
+    
+    // Set up performance monitoring if enabled
+    if (trackingConfig.performance_metrics?.enabled && window.PerformanceObserver) {
+      setupPerformanceMonitoring();
+    }
+    
+    // Track user interactions if enabled
+    if (trackingConfig.activity_metrics?.enabled) {
+      setupInteractionTracking();
+    }
+    
+    // Send initial pageview if consent was already given
+    if (hasConsent) {
+      console.log('Sending initial pageview');
+      sendPageView();
+    }
+  } catch (e) {
+    console.error('Error initializing Google Analytics:', e);
+    setupFallbackTracking();
   }
   
-  // Set up performance monitoring if enabled
-  if (trackingConfig.performance_metrics?.enabled && window.PerformanceObserver) {
-    setupPerformanceMonitoring();
-  }
-  
-  // Track user interactions if enabled
-  if (trackingConfig.activity_metrics?.enabled) {
-    setupInteractionTracking();
-  }
-  
-  // Send initial pageview if consent was already given
-  if (hasConsent) {
-    console.log('Sending initial pageview');
+  console.log('Google Analytics initialized with ID:', GA_MEASUREMENT_ID);
+}
+
+// Function to send pageview using sendBeacon if available
+function sendPageView() {
+  try {
     gtag('event', 'page_view', {
       page_title: document.title,
       page_location: window.location.href,
       page_path: window.location.pathname
     });
+  } catch (e) {
+    console.error('Error sending pageview:', e);
+    // Fallback to sendBeacon
+    if (navigator.sendBeacon) {
+      const GA_MEASUREMENT_ID = 'G-8RPR9RZGKL';
+      const payload = {
+        v: 2,
+        tid: GA_MEASUREMENT_ID,
+        t: 'pageview',
+        dl: window.location.href,
+        dt: document.title,
+        dr: document.referrer
+      };
+      
+      try {
+        navigator.sendBeacon(
+          'https://www.google-analytics.com/collect',
+          JSON.stringify(payload)
+        );
+      } catch (beaconError) {
+        console.error('SendBeacon failed:', beaconError);
+      }
+    }
   }
+}
+
+// Setup fallback tracking using navigator.sendBeacon
+function setupFallbackTracking() {
+  console.log('Setting up fallback tracking with sendBeacon');
   
-  console.log('Google Analytics initialized with ID:', GA_MEASUREMENT_ID);
+  // Create simple tracker using sendBeacon
+  window.sendAnalyticsEvent = function(eventName, eventParams) {
+    if (navigator.sendBeacon) {
+      const GA_MEASUREMENT_ID = 'G-8RPR9RZGKL';
+      const payload = {
+        v: 2,
+        tid: GA_MEASUREMENT_ID,
+        t: 'event',
+        ec: eventParams?.event_category || 'event',
+        ea: eventName,
+        el: eventParams?.event_label,
+        ev: eventParams?.value
+      };
+      
+      try {
+        navigator.sendBeacon(
+          'https://www.google-analytics.com/collect',
+          JSON.stringify(payload)
+        );
+        return true;
+      } catch (e) {
+        console.error('SendBeacon failed:', e);
+        return false;
+      }
+    }
+    return false;
+  };
+  
+  // Send initial pageview
+  sendPageView();
+  
+  // Monitor all clicks
+  document.addEventListener('click', function(e) {
+    const target = e.target.closest('a, button');
+    if (!target) return;
+    
+    const eventData = {
+      event_category: 'Engagement',
+      event_label: target.innerText || target.id || 'unknown',
+      value: 1
+    };
+    
+    window.sendAnalyticsEvent('click', eventData);
+  });
 }
 
 // Setup cookie consent functionality
@@ -511,12 +598,8 @@ function showCookieBanner() {
         }
       }
       
-      // Send an initial pageview event
-      gtag('event', 'page_view', {
-        page_title: document.title,
-        page_location: window.location.href,
-        page_path: window.location.pathname
-      });
+      // Send an initial pageview event using the more reliable function
+      sendPageView();
       
       // Hide the banner
       hideCookieBanner();
