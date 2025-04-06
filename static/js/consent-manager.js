@@ -4,40 +4,43 @@
 
 // Initialize consent state
 function initConsentManager() {
-  // Check if consent was already given
-  const hasConsent = localStorage.getItem('analytics_consent') === 'true';
-  
-  // Initialize dataLayer for GTM
+  // Ensure GTM dataLayer exists
   window.dataLayer = window.dataLayer || [];
   
-  // Set default consent state based on previous choices
-  if (hasConsent) {
-    // If consent was previously given, update GTM
-    window.dataLayer.push({
-      'event': 'consent_update',
-      'analytics_storage': 'granted',
-      'ad_storage': 'denied',
-      'functionality_storage': 'granted',
-      'personalization_storage': 'denied',
-      'security_storage': 'granted'
-    });
-  } else {
-    // If no consent yet or consent denied, default to denied
-    window.dataLayer.push({
-      'event': 'consent_default',
-      'analytics_storage': 'denied',
-      'ad_storage': 'denied', 
-      'functionality_storage': 'denied',
-      'personalization_storage': 'denied',
-      'security_storage': 'granted' // Security cookies are always allowed
-    });
+  // Wait a brief moment to ensure GTM has initialized
+  setTimeout(() => {
+    // Check if consent was already given
+    const hasConsent = localStorage.getItem('analytics_consent') === 'true';
     
-    // Show the consent banner
-    showConsentBanner();
-  }
-  
-  // Check if consent has expired
-  checkConsentExpiry();
+    // Set default consent state based on previous choices
+    if (hasConsent) {
+      // If consent was previously given, update GTM
+      window.dataLayer.push({
+        'event': 'consent_update',
+        'analytics_storage': 'granted',
+        'ad_storage': 'denied',
+        'functionality_storage': 'granted',
+        'personalization_storage': 'denied',
+        'security_storage': 'granted'
+      });
+    } else {
+      // If no consent yet or consent denied, default to denied
+      window.dataLayer.push({
+        'event': 'consent_default',
+        'analytics_storage': 'denied',
+        'ad_storage': 'denied', 
+        'functionality_storage': 'denied',
+        'personalization_storage': 'denied',
+        'security_storage': 'granted' // Security cookies are always allowed
+      });
+      
+      // Show the consent banner
+      showConsentBanner();
+    }
+    
+    // Check if consent has expired
+    checkConsentExpiry();
+  }, 100); // Small delay to ensure GTM is ready
 }
 
 // Show the cookie consent banner
