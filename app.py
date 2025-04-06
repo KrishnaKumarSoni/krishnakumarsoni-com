@@ -84,6 +84,17 @@ def serve_configurations(filename):
     # Serve files from the configurations directory in static
     return send_from_directory('static/configurations', filename)
 
+@app.route('/api/tracking-config')
+def tracking_config():
+    try:
+        config_path = os.path.join('static', 'configurations', 'tracking.yaml')
+        with open(config_path, 'r') as file:
+            config = yaml.safe_load(file)
+            return jsonify(config)
+    except Exception as e:
+        app.logger.error(f"Error loading tracking config: {str(e)}")
+        return jsonify({"error": "Failed to load tracking configuration"}), 500
+
 @app.route('/solutions')
 def solutions():
     content = get_section_content('solutions')

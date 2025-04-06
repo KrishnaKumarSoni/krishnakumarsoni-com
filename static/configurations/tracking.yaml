@@ -1,0 +1,98 @@
+tracking:
+  browser_fingerprint:
+    enabled: true
+    collect:
+      - userAgent
+      - language
+      - platform
+      - screenResolution
+      - colorDepth
+      - timezone
+      - plugins
+      - canvas_fingerprint
+      - webgl_fingerprint
+      - fonts
+    storage_duration: 30d  # Store for 30 days
+
+  location_data:
+    enabled: true
+    collect:
+      - ip_address
+      - country
+      - city
+      - region
+      - latitude
+      - longitude
+      - isp
+      - connection_type
+    update_frequency: 24h  # Update once per day
+
+  activity_metrics:
+    enabled: true
+    collect:
+      session:
+        - session_id
+        - start_time
+        - end_time
+        - duration
+        - source
+        - referrer
+      page_views:
+        - url
+        - title
+        - time_spent
+        - scroll_depth
+        - exit_page
+      interactions:
+        - clicks
+        - form_submissions
+        - button_clicks
+        - file_downloads
+        - external_links
+      user_journey:
+        - entry_point
+        - navigation_path
+        - exit_point
+    session_timeout: 30m  # 30 minutes
+    tracking_frequency: real-time
+
+  performance_metrics:
+    enabled: true
+    collect:
+      page_load:
+        - time_to_first_byte
+        - dom_load_time
+        - full_page_load
+        - first_contentful_paint
+        - largest_contentful_paint
+      resources:
+        - api_response_times
+        - asset_load_times
+        - memory_usage
+        - cpu_usage
+      errors:
+        - js_errors
+        - api_errors
+        - http_status_codes
+      network:
+        - bandwidth_usage
+        - connection_speed
+        - latency
+    sampling_rate: 100  # Collect from 100% of sessions
+    reporting_interval: 5m  # Report every 5 minutes
+
+storage:
+  type: database  # Where to store the tracking data
+  retention_period: 90d  # Keep data for 90 days
+  data_format: json
+
+privacy:
+  gdpr_compliant: true
+  anonymize_ip: true
+  cookie_consent_required: true
+  data_encryption: true
+  pii_handling:
+    exclude:
+      - passwords
+      - payment_info
+      - personal_documents 

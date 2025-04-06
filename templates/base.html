@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Portfolio{% endblock %}</title>
+    <!-- Google Analytics -->
+    <script src="{{ url_for('static', filename='js/analytics.js') }}"></script>
     <!-- Base styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
     <!-- Layout components -->
@@ -84,7 +86,7 @@
                         <i class="ph ph-gift"></i>
                         <span class="offerings-badge">0</span>
                     </span>
-                    Offerings <span class="keyboard-shortcut">⌘O</span>
+                    Offerings <span class="keyboard-shortcut">⌘E</span>
                 </a>
             </li>
             <li><a href="/solutions" class="{{ 'active' if active_page == 'solutions' }}"><i class="ph ph-lightbulb"></i> Solutions <span class="keyboard-shortcut">⌘S</span></a></li>
@@ -137,7 +139,7 @@
                         e.preventDefault();
                         window.location.href = '/';
                         break;
-                    case 'o':
+                    case 'e':
                         e.preventDefault();
                         window.location.href = '/offerings';
                         break;
