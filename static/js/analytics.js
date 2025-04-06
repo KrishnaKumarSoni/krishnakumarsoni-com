@@ -90,6 +90,29 @@ function initializeGoogleAnalytics() {
   // Google Analytics 4 implementation - only runs in production
   const GA_MEASUREMENT_ID = 'G-8RPR9RZGKL'; // Updated with your actual GA4 measurement ID
   
+  // Send a direct hit to Google Analytics to register the page visit - no CORS issues with this approach
+  try {
+    const clientId = getOrCreateClientId();
+    const params = new URLSearchParams({
+      v: '2',                        // GA4 API version
+      tid: GA_MEASUREMENT_ID,        // Measurement ID
+      cid: clientId,                 // Client ID
+      dl: window.location.href,      // Document location URL
+      dt: document.title,            // Document title
+      ul: navigator.language,        // User language
+      sr: `${window.screen.width}x${window.screen.height}` // Screen resolution
+    });
+    
+    // Send as image request - most reliable method to avoid CORS
+    const ga4PixelUrl = `https://www.google-analytics.com/g/collect?${params.toString()}`;
+    const img = new Image();
+    img.src = ga4PixelUrl;
+    console.log('Sent direct GA4 hit via pixel');
+  } catch (e) {
+    console.error('Error sending direct GA4 hit:', e);
+  }
+  
+  // Continue with standard GA initialization
   // Initialize dataLayer and gtag function
   window.dataLayer = window.dataLayer || [];
   
@@ -170,116 +193,112 @@ function sendPageView() {
     gtag('event', 'page_view', {
       page_title: document.title,
       page_location: window.location.href,
-      page_path: window.location.pathname
+      page_path: window.location.pathname,
+      transport_type: 'beacon'
     });
   } catch (e) {
     console.error('Error sending pageview:', e);
-    // Fallback to sendBeacon with proper GA4 format
-    if (navigator.sendBeacon) {
-      const GA_MEASUREMENT_ID = 'G-8RPR9RZGKL';
-      const clientId = localStorage.getItem('ga_client_id') || generateClientId();
-      
-      // GA4 requires this format
-      const payload = {
-        client_id: clientId,
-        non_personalized_ads: true,
-        events: [{
-          name: 'page_view',
-          params: {
-            page_title: document.title,
-            page_location: window.location.href,
-            page_path: window.location.pathname,
-            engagement_time_msec: 100
-          }
-        }]
-      };
-      
-      try {
-        // Convert payload to base64 for GA4
-        const base64Payload = btoa(JSON.stringify(payload));
-        const url = `https://www.google-analytics.com/mp/collect?measurement_id=${GA_MEASUREMENT_ID}&api_secret=THuVFb0FQp2XzC1hPkLBvw`;
-        
-        // Use application/json content type
-        const blob = new Blob([JSON.stringify(payload)], {
-          type: 'application/json'
-        });
-        
-        navigator.sendBeacon(url, blob);
-        console.log('Sent pageview via sendBeacon');
-      } catch (beaconError) {
-        console.error('SendBeacon failed:', beaconError);
-      }
-    }
+    // Fallback to image beacon which avoids CORS issues
+    sendPixelBeacon('pageview', {
+      dl: window.location.href,
+      dt: document.title,
+      dr: document.referrer
+    });
   }
 }
 
-// Generate a random client ID for GA4
-function generateClientId() {
-  const clientId = Math.floor(Math.random() * 10000000000) + '.' + Math.floor(Date.now() / 1000);
-  localStorage.setItem('ga_client_id', clientId);
+// Send event via pixel beacon (image request) - avoids CORS completely
+function sendPixelBeacon(hitType, params = {}) {
+  const GA_MEASUREMENT_ID = 'G-8RPR9RZGKL';
+  // Extract the UA property ID (UA-XXXXX-Y) from the GA4 ID if available,
+  // or use the GA4 ID directly with Universal Analytics endpoint
+  const uaPropertyId = GA_MEASUREMENT_ID;
+  const clientId = getOrCreateClientId();
+  
+  // Base parameters for Universal Analytics
+  const baseParams = {
+    v: '1',                    // Protocol Version
+    tid: uaPropertyId,         // Tracking/Property ID
+    cid: clientId,             // Client ID
+    t: hitType,                // Hit Type
+    z: Date.now()              // Cache Buster
+  };
+  
+  // Combine parameters
+  const combinedParams = {...baseParams, ...params};
+  
+  // Build query string
+  const queryString = Object.keys(combinedParams)
+    .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(combinedParams[key])}`)
+    .join('&');
+  
+  // Send as image request to Universal Analytics endpoint
+  const pixelUrl = `https://www.google-analytics.com/collect?${queryString}`;
+  const img = new Image();
+  img.src = pixelUrl;
+  
+  console.log('Sent analytics via pixel beacon to Universal Analytics endpoint');
+  return true;
+}
+
+// Get or create a client ID
+function getOrCreateClientId() {
+  let clientId = localStorage.getItem('ga_client_id');
+  if (!clientId) {
+    clientId = generateClientId();
+    localStorage.setItem('ga_client_id', clientId);
+  }
   return clientId;
 }
 
-// Setup fallback tracking using navigator.sendBeacon
+// Generate a random client ID
+function generateClientId() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+// Setup fallback tracking using pixel beacon
 function setupFallbackTracking() {
-  console.log('Setting up fallback tracking with sendBeacon');
+  console.log('Setting up fallback tracking with pixel beacon');
   
-  // Generate client ID if not exists
-  const clientId = localStorage.getItem('ga_client_id') || generateClientId();
-  
-  // Create simple tracker using sendBeacon with GA4 format
-  window.sendAnalyticsEvent = function(eventName, eventParams) {
-    if (navigator.sendBeacon) {
-      const GA_MEASUREMENT_ID = 'G-8RPR9RZGKL';
-      
-      // Format for GA4 Measurement Protocol
-      const payload = {
-        client_id: clientId,
-        non_personalized_ads: true,
-        events: [{
-          name: eventName,
-          params: {
-            ...eventParams,
-            engagement_time_msec: 100
-          }
-        }]
-      };
-      
-      try {
-        // Endpoint for GA4
-        const url = `https://www.google-analytics.com/mp/collect?measurement_id=${GA_MEASUREMENT_ID}&api_secret=THuVFb0FQp2XzC1hPkLBvw`;
-        
-        // Use application/json content type
-        const blob = new Blob([JSON.stringify(payload)], {
-          type: 'application/json'
-        });
-        
-        navigator.sendBeacon(url, blob);
-        console.log(`Sent ${eventName} event via sendBeacon`);
-        return true;
-      } catch (e) {
-        console.error('SendBeacon failed:', e);
-        return false;
-      }
+  // Override gtag function with our pixel beacon implementation
+  window.gtag = function(command, action, params = {}) {
+    console.log(`Fallback tracking: ${command} / ${action}`, params);
+    
+    if (command === 'event') {
+      return sendPixelBeacon('event', {
+        ec: params.event_category || 'event',
+        ea: action,
+        el: params.event_label,
+        ev: params.value
+      });
     }
+    
+    if (command === 'config') {
+      // Just log config calls in fallback mode
+      console.log('GA config called in fallback mode');
+      return true;
+    }
+    
     return false;
   };
   
   // Send initial pageview
   sendPageView();
   
-  // Monitor all clicks
+  // Track all clicks
   document.addEventListener('click', function(e) {
     const target = e.target.closest('a, button');
     if (!target) return;
     
-    const eventData = {
-      event_category: 'Engagement',
-      event_label: target.innerText || target.id || 'unknown',
-      value: 1
-    };
-    
-    window.sendAnalyticsEvent('click', eventData);
+    sendPixelBeacon('event', {
+      ec: 'Engagement',
+      ea: 'click',
+      el: target.innerText || target.id || 'unknown'
+    });
   });
 }
 
@@ -608,10 +627,14 @@ function showCookieBanner() {
       // Store consent in localStorage
       localStorage.setItem('analytics_consent', 'true');
       
-      // Update consent in Google Analytics
-      gtag('consent', 'update', {
-        'analytics_storage': 'granted'
-      });
+      try {
+        // Update consent in Google Analytics
+        gtag('consent', 'update', {
+          'analytics_storage': 'granted'
+        });
+      } catch (e) {
+        console.error('Error updating consent:', e);
+      }
       
       // Set expiration date based on storage_duration if available
       if (trackingConfig && trackingConfig.browser_fingerprint?.storage_duration) {
@@ -633,7 +656,14 @@ function showCookieBanner() {
         }
       }
       
-      // Send an initial pageview event using the more reliable function
+      // Send an initial pageview event directly via pixel beacon to ensure it works
+      sendPixelBeacon('pageview', {
+        dl: window.location.href,
+        dt: document.title,
+        dr: document.referrer
+      });
+      
+      // Also try the normal method
       sendPageView();
       
       // Hide the banner
