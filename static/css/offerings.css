@@ -131,24 +131,6 @@
     opacity: 0.9;
 }
 
-/* Product Category Chip */
-.product-category {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: 16px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: white;
-    text-transform: capitalize;
-    margin-bottom: 0.75rem;
-    background-color: var(--category-color);
-}
-
-.product-category::before {
-    content: '';
-    --category-color: attr(data-color);
-}
-
 @media (max-width: 1200px) {
     .offerings-section {
         padding: 2rem 1rem;

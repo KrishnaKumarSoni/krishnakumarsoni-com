@@ -49,29 +49,7 @@
 
         <div class="products-categories">
             <div class="products-grid">
-                {% for product in products %}
-                <div class="product-card" data-id="{{ product.id }}">
-                    <div class="product-image">
-                        <img 
-                            src="{{ url_for('static', filename='images/' + product.image) }}"
-                            alt="{{ product.title }}"
-                            class="product-image"
-                        >
-                    </div>
-                    <div class="product-category" data-color="{{ product.category_color }}">
-                        {{ product.category|capitalize }}
-                    </div>
-                    <div class="product-content">
-                        <h3>{{ product.title }}</h3>
-                        <p>{{ product.description }}</p>
-                    </div>
-                    <div class="card-footer">
-                        <button class="add-to-cart" data-product="{{ product.id }}" aria-label="Add {{ product.title }} to cart">
-                            <i class="ph ph-shopping-cart-simple"></i> Add to Cart
-                        </button>
-                    </div>
-                </div>
-                {% endfor %}
+                <!-- Products will be loaded via JavaScript -->
             </div>
         </div>
     </section>
@@ -79,25 +57,52 @@
 {% endblock %}
 
 {% block footer_scripts %}
+<script src="{{ url_for('static', filename='js/products_config.js') }}"></script>
 <script src="{{ url_for('static', filename='js/offerings.js') }}"></script>
 <script>
+    // This script handles rendering the products from the config
     document.addEventListener('DOMContentLoaded', function() {
-        // Set category colors
-        document.querySelectorAll('.product-category').forEach(category => {
-            category.style.backgroundColor = category.dataset.color;
-        });
-
+        const productGrid = document.querySelector('.products-grid');
+        
         // Get cart items from localStorage
         const cartItems = new Set(JSON.parse(localStorage.getItem('cartItems')) || []);
         
-        // Update UI for items that are in cart
-        cartItems.forEach(productId => {
-            const productCard = document.querySelector(`.product-card[data-id="${productId}"]`);
-            if (productCard) {
+        // Create product cards for all products
+        PRODUCTS.forEach(product => {
+            const productCard = document.createElement('div');
+            productCard.className = 'product-card';
+            productCard.dataset.id = product.id;
+            
+            // Check if this product is in the cart
+            const isSelected = cartItems.has(product.id);
+            if (isSelected) {
                 productCard.classList.add('selected');
-                const addButton = productCard.querySelector('.add-to-cart');
-                addButton.innerHTML = '<i class="ph ph-check"></i> Selected';
             }
+            
+            // Image path - use placeholder.jpg if image doesn't exist or is not specified
+            const imagePath = product.image ? 
+                `{{ url_for('static', filename='images/') }}${product.image}` : 
+                `{{ url_for('static', filename='images/placeholder.jpg') }}`;
+            
+            productCard.innerHTML = `
+                <div class="product-image">
+                    <img src="${imagePath}" alt="${product.title}" onerror="this.src='{{ url_for('static', filename='images/placeholder.jpg') }}'; this.classList.add('placeholder-img');">
+                </div>
+                <div class="product-category ${product.type}">
+                    ${product.type.charAt(0).toUpperCase() + product.type.slice(1)}
+                </div>
+                <div class="product-content">
+                    <h3>${product.title}</h3>
+                    <p>${product.description}</p>
+                </div>
+                <div class="card-footer">
+                    <button class="add-to-cart" data-product="${product.id}" aria-label="Add ${product.title} to cart">
+                        <i class="ph ${isSelected ? 'ph-check' : 'ph-shopping-cart-simple'}"></i> ${isSelected ? 'Selected' : 'Add to Cart'}
+                    </button>
+                </div>
+            `;
+            
+            productGrid.appendChild(productCard);
         });
         
         // Set up event listeners for add to cart buttons
