@@ -26,42 +26,51 @@ def init_blog_routes(app):
         with open(filepath, 'r', encoding='utf-8') as f:
             content = f.read()
             
-        # Parse the first line as title and second line as date
+        # Split content into metadata and body
         lines = content.split('\n')
-        title = lines[0].strip()
-        date_str = lines[1].strip() if len(lines) > 1 else ""
+        metadata = {}
+        content_start = 0
+        
+        # Parse metadata
+        for i, line in enumerate(lines):
+            if line.startswith('Title: '):
+                metadata['title'] = line[7:].strip()
+            elif line.startswith('Subtitle: '):
+                metadata['subtitle'] = line[10:].strip()
+            elif line.startswith('Category: '):
+                metadata['category'] = line[10:].strip()
+            elif line.startswith('Thumbnail: '):
+                metadata['thumbnail'] = line[11:].strip()
+            elif line.startswith('Date: '):
+                metadata['date'] = line[6:].strip()
+            elif line.strip() == '' and all(key in metadata for key in ['title', 'subtitle', 'category', 'date']):
+                content_start = i + 1
+                break
+        
+        # Get the actual content (everything after metadata)
+        content = '\n'.join(lines[content_start:]).strip()
         
         # Parse the date
-        date_obj = parse_date(date_str)
+        date_obj = parse_date(metadata['date'])
         
-        # Get the excerpt from the first paragraph after title and date
-        content_lines = [line for line in lines[3:] if line.strip()]
-        excerpt = content_lines[0] if content_lines else ""
-        
-        # Clean excerpt from markdown syntax
-        excerpt = re.sub(r'[#*`_]', '', excerpt).strip()
-        
-        # Get category from filename (you can modify this logic)
-        category = filename.split('-')[0].replace('-', ' ').title()
-        
-        # Get the raw content (for editing)
-        content = '\n'.join(lines[3:]) if len(lines) > 3 else ""
+        # Get the excerpt from the first paragraph of content
+        soup = BeautifulSoup(markdown.markdown(content), 'html.parser')
+        excerpt = soup.p.text if soup.p else ""
         
         # Generate keywords from content
-        keywords = generate_keywords(title, excerpt, category)
+        keywords = generate_keywords(metadata['title'], metadata['subtitle'], metadata['category'])
         
         return {
-            'title': title,
+            'title': metadata['title'],
+            'subtitle': metadata['subtitle'],
             'date': date_obj.strftime('%B %d, %Y'),
             'date_iso': date_obj.isoformat(),
             'excerpt': excerpt,
-            'category': category,
+            'category': metadata['category'],
             'content': content,
             'slug': os.path.splitext(filename)[0],
             'keywords': keywords,
-            'thumbnail': url_for('static', filename=f'uploads/{os.path.splitext(filename)[0]}.jpg', _external=True)
-                if os.path.exists(os.path.join(UPLOAD_FOLDER, f'{os.path.splitext(filename)[0]}.jpg'))
-                else None
+            'thumbnail': metadata.get('thumbnail')
         }
 
     def generate_keywords(title, excerpt, category):
@@ -77,25 +86,31 @@ def init_blog_routes(app):
         return ', '.join(set(keywords[:10]))
     
     def extract_headings(html_content):
-        """Extract h2 and h3 headings from HTML content for blog table of contents"""
+        """Extract headings from HTML content and generate table of contents."""
         soup = BeautifulSoup(html_content, 'html.parser')
-        headings = []
+        headings = soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
+        toc = []
         
-        for heading in soup.find_all(['h2', 'h3']):
-            # Generate an ID from the heading text
-            heading_id = re.sub(r'[^\w\s-]', '', heading.text.lower())
-            heading_id = re.sub(r'[\s-]+', '-', heading_id).strip('-')
+        for i, heading in enumerate(headings):
+            # Skip if it's a metadata heading
+            if any(heading.text.lower().startswith(meta.lower()) for meta in ['title:', 'subtitle:', 'category:', 'thumbnail:', 'date:']):
+                continue
             
-            # Set the ID in the HTML
+            # Generate unique ID for the heading
+            heading_id = f'heading-{i}'
             heading['id'] = heading_id
             
-            headings.append({
-                'level': int(heading.name[1]),
-                'text': heading.text,
-                'id': heading_id
-            })
+            # Get heading level
+            level = int(heading.name[1])
             
-        return headings, str(soup)
+            # Add to table of contents
+            toc.append({
+                'text': heading.text,
+                'id': heading_id,
+                'level': level
+            })
+        
+        return toc, str(soup)
 
     def blogs():
         # Get all markdown files from the blogs folder
@@ -124,16 +139,15 @@ def init_blog_routes(app):
         if not os.path.exists(filepath):
             return redirect(url_for('blogs'))
             
-        with open(filepath, 'r', encoding='utf-8') as f:
-            content = f.read()
-            
-        # Convert markdown to HTML
-        html_content = markdown.markdown(content)
+        # Get blog metadata and content
+        blog_data = get_blog_metadata(f'{slug}.md')
+        
+        # Convert markdown content to HTML
+        html_content = markdown.markdown(blog_data['content'])
         
         # Extract headings for table of contents and update HTML
         toc, html_content = extract_headings(html_content)
         
-        blog_data = get_blog_metadata(f'{slug}.md')
         blog_data['content'] = html_content
         blog_data['toc'] = toc
         

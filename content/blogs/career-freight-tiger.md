@@ -1,4 +1,8 @@
-Freight Tiger
+Title: Building Enterprise SaaS for India's Logistics Giants
+Subtitle: Freight Tiger
+Category: Career
+Thumbnail: https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=2070
+Date: 2024-03-15
 
 Managing ePOD and freight invoicing for a TMS might not sound glamorous, but when your clients include giants like Asian Paints, Kellogg's, and CEAT, the stakes are real. It's a space where things move—literally. Massive warehouses, towering stacks of goods, trucks rolling in and out like clockwork (or complete chaos, depending on the day). The problems were tangible, almost cinematic, making them incredibly fun to solve.
 

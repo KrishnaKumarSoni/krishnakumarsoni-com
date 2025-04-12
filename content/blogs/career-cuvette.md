@@ -1,4 +1,8 @@
-Cuvette
+Title: Cuvette
+Subtitle: First Steps into Professional Mobile Development
+Category: Career
+Thumbnail: https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?q=80&w=2070
+Date: 2024-03-12
 
 My journey at Cuvette was short but transformative. As a Flutter Developer Intern, I was part of a team building a marketplace app that connected service providers across eight different categories with customers who needed their services.
 

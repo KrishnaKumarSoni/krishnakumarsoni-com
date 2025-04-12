@@ -1,4 +1,8 @@
-Urban Company
+Title: Buliding FinTech Products for India's Largest Home Services Platform
+Subtitle: Urban Company
+Category: Career
+Thumbnail: https://images.unsplash.com/photo-1450101499163-c8848c66ca85?q=80&w=2070
+Date: 2024-03-13
 
 # My journey in shaping Urban Company's partner finance benefits
 

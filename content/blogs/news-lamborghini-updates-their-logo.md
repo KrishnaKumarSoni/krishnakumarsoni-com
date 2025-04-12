@@ -1,4 +1,8 @@
-Lamborghini updates their logo
+Title: Lamborghini Updates Their Logo
+Subtitle: Deep Dive into the Iconic Brand's New Visual Identity
+Category: News
+Thumbnail: https://images.unsplash.com/photo-1632245889029-e406faaa34cd?q=80&w=2070
+Date: 2024-03-10
 
 Lamborghini changed their logo! They went from a 3D badge to a 2D style logo. Why would they do this? All major players in technology space like Apple, Reddit, Airbnb, and Shopify have all navigated away from flat design in recent years. I went deeper into the rabbit hole to understand where the difference lies.
 

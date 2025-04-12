@@ -1,4 +1,8 @@
-Thinking on discoverability and efficiency in chat interfaces
+Title: Discoverability and Efficiency in Chat Interfaces
+Subtitle: Exploring the Evolution of AI Interaction Design
+Category: Experience
+Thumbnail: https://images.unsplash.com/photo-1577563908411-5077b6dc7624?q=80&w=2070
+Date: 2024-03-08
 
 Chat interfaces have become the dominant paradigm for AI interaction, but they come with significant limitations that we're only beginning to address. As someone who's spent countless hours in ChatGPT, Claude, and other LLM interfaces, I've been thinking deeply about the tension between the natural language interaction these tools enable and the efficiency challenges they create.
 

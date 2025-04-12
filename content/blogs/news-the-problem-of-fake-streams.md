@@ -1,4 +1,8 @@
-The problem of fake streams
+Title: The Problem of Fake Streams
+Subtitle: Music Streaming Fraud is Costing Artists Billions
+Category: News
+Thumbnail: https://images.unsplash.com/photo-1511379938547-c1f69419868d?q=80&w=2070
+Date: 2024-03-09
 
 A Danish man collected $290,000 in royalties using bots to stream his own music! Artists took the case to the court and the man was sent to prison. Even though this case got caught, it was just one of the $2 Billion worth of fraud streams occurring each year. That's 10% of the entire $20 Billion annual royalty income in the music streaming market! 
 

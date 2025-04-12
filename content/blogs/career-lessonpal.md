@@ -1,4 +1,8 @@
-Lessonpal
+Title: First Steps into Product Management at an EdTech Startup
+Subtitle: Lessonpal
+Category: Career
+Thumbnail: https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=2070
+Date: 2024-03-14
 
 Lessonpal was my first real dive into product management, and it couldn't have been more exciting. As a product intern at this early-stage startup, I was thrown into the deep end of building an online marketplace for one-on-one tutoring from scratch.
 

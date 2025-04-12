@@ -10,12 +10,17 @@
             {% for blog in blogs %}
                 <article class="blog-item">
                     <div class="blog-number">#{{ loop.index }}</div>
+                    {% if blog.thumbnail %}
+                        <div class="blog-thumbnail">
+                            <img src="{{ blog.thumbnail }}" alt="{{ blog.title }}">
+                        </div>
+                    {% endif %}
                     <div class="blog-content">
                         <div class="blog-meta">
                             <time datetime="{{ blog.date_iso }}">{{ blog.date }}</time>
                             <span class="blog-category">{{ blog.category }}</span>
                             {% if is_local %}
-                                <button class="edit-blog-btn" onclick='showEditForm("{{ blog.slug }}", {{ blog|tojson|safe }})'>
+                                <button class="edit-blog-btn" onclick="showEditForm('{{ blog.slug }}', {{ blog|tojson|safe }})">
                                     <i class="ri-edit-line"></i>
                                 </button>
                             {% endif %}
@@ -23,12 +28,10 @@
                         <h2 class="blog-title">
                             <a href="{{ url_for('blog', slug=blog.slug) }}">{{ blog.title }}</a>
                         </h2>
+                        {% if blog.subtitle %}
+                            <p class="blog-subtitle">{{ blog.subtitle }}</p>
+                        {% endif %}
                     </div>
-                    {% if blog.thumbnail %}
-                        <div class="blog-thumbnail">
-                            <img src="{{ blog.thumbnail }}" alt="{{ blog.title }}">
-                        </div>
-                    {% endif %}
                 </article>
             {% endfor %}
         </div>
@@ -42,24 +45,16 @@
                         <input type="text" id="title" name="title" required>
                     </div>
                     <div class="form-group">
+                        <label for="subtitle">Subtitle</label>
+                        <input type="text" id="subtitle" name="subtitle">
+                    </div>
+                    <div class="form-group">
                         <label for="category">Category</label>
                         <input type="text" id="category" name="category" required>
                     </div>
                     <div class="form-group">
-                        <label for="thumbnail">Thumbnail</label>
-                        <div class="thumbnail-upload" id="thumbnailDrop">
-                            <input type="file" id="thumbnail" name="thumbnail" accept="image/*" hidden>
-                            <div class="upload-content">
-                                <i class="ri-upload-cloud-line"></i>
-                                <p>Drag and drop an image here, or click to select</p>
-                            </div>
-                            <div class="preview-container" hidden>
-                                <img id="imagePreview" src="" alt="Preview">
-                                <button type="button" class="remove-image" onclick="removeImage()">
-                                    <i class="ri-close-line"></i>
-                                </button>
-                            </div>
-                        </div>
+                        <label for="thumbnail">Thumbnail URL (optional)</label>
+                        <input type="url" id="thumbnail" name="thumbnail">
                     </div>
                     <div class="form-group">
                         <label for="content">Content (Markdown)</label>
@@ -85,24 +80,16 @@
                             <input type="text" id="editTitle" name="title" required>
                         </div>
                         <div class="form-group">
+                            <label for="editSubtitle">Subtitle</label>
+                            <input type="text" id="editSubtitle" name="subtitle">
+                        </div>
+                        <div class="form-group">
                             <label for="editCategory">Category</label>
                             <input type="text" id="editCategory" name="category" required>
                         </div>
                         <div class="form-group">
-                            <label for="editThumbnail">Thumbnail</label>
-                            <div class="thumbnail-upload" id="editThumbnailDrop">
-                                <input type="file" id="editThumbnail" name="thumbnail" accept="image/*" hidden>
-                                <div class="upload-content">
-                                    <i class="ri-upload-cloud-line"></i>
-                                    <p>Drag and drop an image here, or click to select</p>
-                                </div>
-                                <div class="preview-container" hidden>
-                                    <img id="editImagePreview" src="" alt="Preview">
-                                    <button type="button" class="remove-image" onclick="removeEditImage()">
-                                        <i class="ri-close-line"></i>
-                                    </button>
-                                </div>
-                            </div>
+                            <label for="editThumbnail">Thumbnail URL (optional)</label>
+                            <input type="url" id="editThumbnail" name="thumbnail">
                         </div>
                         <div class="form-group">
                             <label for="editContent">Content (Markdown)</label>
@@ -124,8 +111,8 @@
 .blog-item {
     display: flex;
     align-items: flex-start;
-    padding: 1rem 0;
-    gap: 1.5rem;
+    padding: 1.5rem 0;
+    gap: 1rem;
     border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
@@ -138,6 +125,21 @@
     opacity: 0.8;
 }
 
+.blog-thumbnail {
+    width: 180px;
+    height: 90px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-right: 1rem;
+}
+
+.blog-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
 .blog-content {
     flex: 1;
 }
@@ -146,7 +148,7 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.5rem;
 }
 
 .blog-meta time {
@@ -165,9 +167,10 @@
 
 .blog-title {
     font-family: 'Space Grotesk', sans-serif;
-    font-size: 1.25rem;
+    font-size: 1.5rem;
     margin: 0;
     line-height: 1.3;
+    margin-bottom: 0.5rem;
 }
 
 .blog-title a {
@@ -180,18 +183,11 @@
     color: var(--burnt-orange);
 }
 
-.blog-thumbnail {
-    width: 140px;
-    height: 100px;
-    flex-shrink: 0;
-    border-radius: 6px;
-    overflow: hidden;
-}
-
-.blog-thumbnail img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+.blog-subtitle {
+    color: #666;
+    font-size: 1rem;
+    line-height: 1.5;
+    margin: 0;
 }
 
 .admin-section {
@@ -216,6 +212,7 @@
 }
 
 .form-group input[type="text"],
+.form-group input[type="url"],
 .form-group textarea {
     width: 100%;
     padding: 0.75rem;
@@ -223,60 +220,6 @@
     border-radius: 8px;
     font-family: inherit;
     font-size: 1rem;
-}
-
-.thumbnail-upload {
-    border: 2px dashed #ccc;
-    background: #f8f8f8;
-    border-radius: 8px;
-    padding: 2rem;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.thumbnail-upload:hover,
-.thumbnail-upload.dragover {
-    border-color: var(--burnt-orange);
-    background: #fff;
-}
-
-.upload-content {
-    color: #666;
-}
-
-.upload-content i {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-}
-
-.preview-container {
-    position: relative;
-    width: 100%;
-    max-width: 300px;
-    margin: 0 auto;
-}
-
-.preview-container img {
-    width: 100%;
-    height: auto;
-    border-radius: 4px;
-}
-
-.remove-image {
-    position: absolute;
-    top: -0.5rem;
-    right: -0.5rem;
-    background: white;
-    border: none;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
 .submit-btn {
@@ -359,15 +302,14 @@
 
 @media (max-width: 768px) {
     .blog-item {
-        flex-direction: column;
+        flex-direction: row;
         gap: 1rem;
         padding: 1.5rem 0;
     }
 
     .blog-thumbnail {
-        width: 100%;
-        height: 200px;
-        order: -1;
+        width: 120px;
+        height: 60px;
     }
 
     .blog-number {
@@ -383,115 +325,36 @@
         margin: 1rem auto;
     }
 }
+
+@media (max-width: 480px) {
+    .blog-thumbnail {
+        width: 100px;
+        height: 50px;
+    }
+    
+    .blog-title {
+        font-size: 1.25rem;
+    }
+    
+    .blog-subtitle {
+        font-size: 0.9rem;
+    }
+}
 </style>
 
 <script>
-function initDragDrop(dropZone, input, preview, previewContainer, uploadContent) {
-    dropZone.addEventListener('click', () => input.click());
-    
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, preventDefaults, false);
-    });
-
-    function preventDefaults(e) {
-        e.preventDefault();
-        e.stopPropagation();
-    }
-
-    ['dragenter', 'dragover'].forEach(eventName => {
-        dropZone.addEventListener(eventName, () => {
-            dropZone.classList.add('dragover');
-        });
-    });
-
-    ['dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, () => {
-            dropZone.classList.remove('dragover');
-        });
-    });
-
-    dropZone.addEventListener('drop', (e) => {
-        const file = e.dataTransfer.files[0];
-        if (file && file.type.startsWith('image/')) {
-            handleFile(file);
-        }
-    });
-
-    input.addEventListener('change', (e) => {
-        if (e.target.files.length) {
-            handleFile(e.target.files[0]);
-        }
-    });
-
-    function handleFile(file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            preview.src = e.target.result;
-            uploadContent.hidden = true;
-            previewContainer.hidden = false;
-        };
-        reader.readAsDataURL(file);
-    }
-}
-
-function removeImage(isEdit = false) {
-    const prefix = isEdit ? 'edit' : '';
-    const uploadContent = document.querySelector(`#${prefix}ThumbnailDrop .upload-content`);
-    const previewContainer = document.querySelector(`#${prefix}ThumbnailDrop .preview-container`);
-    const input = document.querySelector(`#${prefix}Thumbnail`);
-    
-    uploadContent.hidden = false;
-    previewContainer.hidden = true;
-    input.value = '';
-}
-
-function removeEditImage() {
-    removeImage(true);
-}
-
 function showEditForm(slug, blogData) {
     document.getElementById('editSlug').value = slug;
     document.getElementById('editTitle').value = blogData.title;
+    document.getElementById('editSubtitle').value = blogData.subtitle || '';
     document.getElementById('editCategory').value = blogData.category;
+    document.getElementById('editThumbnail').value = blogData.thumbnail || '';
     document.getElementById('editContent').value = blogData.content;
-    
-    const previewContainer = document.querySelector('#editThumbnailDrop .preview-container');
-    const uploadContent = document.querySelector('#editThumbnailDrop .upload-content');
-    const preview = document.getElementById('editImagePreview');
-    
-    if (blogData.thumbnail) {
-        preview.src = blogData.thumbnail;
-        uploadContent.hidden = true;
-        previewContainer.hidden = false;
-    } else {
-        uploadContent.hidden = false;
-        previewContainer.hidden = true;
-    }
-    
     document.getElementById('editModal').style.display = 'block';
 }
 
 function closeEditModal() {
     document.getElementById('editModal').style.display = 'none';
 }
-
-// Initialize drag and drop for both forms
-document.addEventListener('DOMContentLoaded', () => {
-    const dropZone = document.getElementById('thumbnailDrop');
-    const input = document.getElementById('thumbnail');
-    const preview = document.getElementById('imagePreview');
-    const previewContainer = document.querySelector('#thumbnailDrop .preview-container');
-    const uploadContent = document.querySelector('#thumbnailDrop .upload-content');
-    
-    initDragDrop(dropZone, input, preview, previewContainer, uploadContent);
-    
-    const editDropZone = document.getElementById('editThumbnailDrop');
-    const editInput = document.getElementById('editThumbnail');
-    const editPreview = document.getElementById('editImagePreview');
-    const editPreviewContainer = document.querySelector('#editThumbnailDrop .preview-container');
-    const editUploadContent = document.querySelector('#editThumbnailDrop .upload-content');
-    
-    initDragDrop(editDropZone, editInput, editPreview, editPreviewContainer, editUploadContent);
-});
 </script>
 {% endblock %}
