@@ -4,6 +4,8 @@ from flask import render_template, request, redirect, url_for, flash, jsonify
 import markdown
 import frontmatter
 from werkzeug.utils import secure_filename
+import re
+from bs4 import BeautifulSoup
 
 def init_blog_routes(app):
     BLOG_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'content', 'blogs')
@@ -36,11 +38,17 @@ def init_blog_routes(app):
         content_lines = [line for line in lines[3:] if line.strip()]
         excerpt = content_lines[0] if content_lines else ""
         
+        # Clean excerpt from markdown syntax
+        excerpt = re.sub(r'[#*`_]', '', excerpt).strip()
+        
         # Get category from filename (you can modify this logic)
         category = filename.split('-')[0].replace('-', ' ').title()
         
         # Get the raw content (for editing)
         content = '\n'.join(lines[3:]) if len(lines) > 3 else ""
+        
+        # Generate keywords from content
+        keywords = generate_keywords(title, excerpt, category)
         
         return {
             'title': title,
@@ -50,10 +58,44 @@ def init_blog_routes(app):
             'category': category,
             'content': content,
             'slug': os.path.splitext(filename)[0],
-            'thumbnail': url_for('static', filename=f'uploads/{os.path.splitext(filename)[0]}.jpg')
+            'keywords': keywords,
+            'thumbnail': url_for('static', filename=f'uploads/{os.path.splitext(filename)[0]}.jpg', _external=True)
                 if os.path.exists(os.path.join(UPLOAD_FOLDER, f'{os.path.splitext(filename)[0]}.jpg'))
                 else None
         }
+
+    def generate_keywords(title, excerpt, category):
+        """Generate keywords from blog content"""
+        # Combine title, excerpt and category
+        combined = f"{title} {excerpt} {category}"
+        # Remove special chars and split
+        words = re.sub(r'[^\w\s]', '', combined.lower()).split()
+        # Remove common words
+        stop_words = {'the', 'is', 'and', 'to', 'a', 'in', 'that', 'of', 'i', 'it', 'for', 'with'}
+        keywords = [word for word in words if word not in stop_words and len(word) > 3]
+        # Return unique keywords
+        return ', '.join(set(keywords[:10]))
+    
+    def extract_headings(html_content):
+        """Extract h2 and h3 headings from HTML content for blog table of contents"""
+        soup = BeautifulSoup(html_content, 'html.parser')
+        headings = []
+        
+        for heading in soup.find_all(['h2', 'h3']):
+            # Generate an ID from the heading text
+            heading_id = re.sub(r'[^\w\s-]', '', heading.text.lower())
+            heading_id = re.sub(r'[\s-]+', '-', heading_id).strip('-')
+            
+            # Set the ID in the HTML
+            heading['id'] = heading_id
+            
+            headings.append({
+                'level': int(heading.name[1]),
+                'text': heading.text,
+                'id': heading_id
+            })
+            
+        return headings, str(soup)
 
     def blogs():
         # Get all markdown files from the blogs folder
@@ -72,6 +114,9 @@ def init_blog_routes(app):
         
         return render_template('pages/blogs.html', 
                              blogs=blogs,
+                             meta_title="Blog | Krishna Kumar Soni",
+                             meta_description="Read articles on product development, management, and technical solutions by Krishna Kumar Soni.",
+                             meta_keywords="blogs, articles, product development, product management, tech insights",
                              is_local=request.host.startswith('127.0.0.1') or request.host.startswith('localhost'))
 
     def blog(slug):
@@ -85,10 +130,38 @@ def init_blog_routes(app):
         # Convert markdown to HTML
         html_content = markdown.markdown(content)
         
+        # Extract headings for table of contents and update HTML
+        toc, html_content = extract_headings(html_content)
+        
         blog_data = get_blog_metadata(f'{slug}.md')
         blog_data['content'] = html_content
+        blog_data['toc'] = toc
         
-        return render_template('pages/blog.html', blog=blog_data)
+        # Structured data
+        blog_json_ld = {
+            "@context": "https://schema.org",
+            "@type": "BlogPosting",
+            "headline": blog_data['title'],
+            "datePublished": blog_data['date_iso'],
+            "dateModified": blog_data['date_iso'],
+            "description": blog_data['excerpt'],
+            "keywords": blog_data['keywords'],
+            "author": {
+                "@type": "Person",
+                "name": "Krishna Kumar Soni"
+            }
+        }
+        
+        if blog_data['thumbnail']:
+            blog_json_ld["image"] = blog_data['thumbnail']
+        
+        return render_template('pages/blog.html', 
+                             blog=blog_data,
+                             meta_title=f"{blog_data['title']} | Krishna Kumar Soni Blog",
+                             meta_description=blog_data['excerpt'],
+                             meta_keywords=blog_data['keywords'],
+                             og_image=blog_data['thumbnail'],
+                             blog_json_ld=blog_json_ld)
 
     def add_blog():
         if not (request.host.startswith('127.0.0.1') or request.host.startswith('localhost')):

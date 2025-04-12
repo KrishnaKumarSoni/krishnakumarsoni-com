@@ -1,9 +1,12 @@
-from flask import Flask, render_template, jsonify, request, redirect, url_for, flash, send_from_directory
+from flask import Flask, render_template, jsonify, request, redirect, url_for, flash, send_from_directory, Response
 from pathlib import Path
 import yaml
 import markdown
 import os
 from blog_routes import init_blog_routes
+from datetime import datetime
+import xml.etree.ElementTree as ET
+import re
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'  # Required for flash messages
@@ -11,7 +14,8 @@ app.secret_key = 'your-secret-key-here'  # Required for flash messages
 # Configuration
 app.config.update(
     DEBUG=True,
-    CONTENT_DIR=Path('content')
+    CONTENT_DIR=Path('content'),
+    SITE_URL='https://krishnakumarsoni.com'  # Update with your actual domain
 )
 
 def get_markdown_content(directory, filename='index.md'):
@@ -27,6 +31,26 @@ def get_markdown_content(directory, filename='index.md'):
 def get_section_content(section_name):
     """Get content for a specific section"""
     return get_markdown_content(section_name)
+
+def get_metadata_from_markdown(directory, filename='index.md'):
+    """Extract title and meta description from markdown content"""
+    file_path = app.config['CONTENT_DIR'] / directory / filename
+    if not file_path.exists():
+        return {"title": "", "description": ""}
+    
+    with open(file_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+        lines = content.split('\n')
+        title = lines[0].strip('# ') if lines and lines[0].startswith('#') else ""
+        
+        # Extract first paragraph for description
+        description = ""
+        for line in lines[1:]:
+            if line.strip() and not line.startswith('#'):
+                description = re.sub(r'[#*`_]', '', line).strip()
+                break
+                
+        return {"title": title, "description": description}
 
 def get_offerings_data():
     """Get offerings data from markdown and structure it for the template"""
@@ -67,17 +91,26 @@ def get_offerings_data():
 
 @app.route('/')
 def index():
+    # Get metadata for SEO
+    metadata = get_metadata_from_markdown('home')
     # Keep existing template rendering for home page since it has special interactive elements
-    return render_template('index.html', active_page='home')
+    return render_template('index.html', 
+                         active_page='home',
+                         meta_title=metadata["title"] or "Home",
+                         meta_description=metadata["description"] or "Professional portfolio of Krishna Kumar Soni - Product Development, Management, and Technical Solutions")
 
 @app.route('/offerings')
 def offerings():
+    # Get metadata for SEO
+    metadata = get_metadata_from_markdown('offerings')
     # Get offerings data from markdown
     offerings_data = get_offerings_data()
     
     return render_template('pages/offerings.html', 
                          active_page='offerings',
-                         offerings=offerings_data)
+                         offerings=offerings_data,
+                         meta_title=metadata["title"] or "My Offerings",
+                         meta_description=metadata["description"] or "Professional services including Product Development, Product Management, Training & Workshops.")
 
 @app.route('/static/configurations/<path:filename>')
 def serve_configurations(filename):
@@ -97,17 +130,86 @@ def tracking_config():
 
 @app.route('/solutions')
 def solutions():
+    # Get metadata for SEO
+    metadata = get_metadata_from_markdown('solutions')
     content = get_section_content('solutions')
     return render_template('pages/solutions.html', 
                          active_page='solutions',
-                         content=content)
+                         content=content,
+                         meta_title=metadata["title"] or "Solutions",
+                         meta_description=metadata["description"] or "Innovative solutions for product development and management challenges.")
 
 @app.route('/resume')
 def resume():
+    # Get metadata for SEO
+    metadata = get_metadata_from_markdown('resume')
     content = get_section_content('resume')
     return render_template('pages/resume.html', 
                          active_page='resume',
-                         content=content)
+                         content=content,
+                         meta_title=metadata["title"] or "Resume",
+                         meta_description=metadata["description"] or "Professional resume of Krishna Kumar Soni - Experience, skills, and qualifications.")
+
+@app.route('/tools')
+def tools():
+    return render_template('pages/tools.html',
+                         active_page='tools',
+                         meta_title="Tools",
+                         meta_description="Useful tools and resources for product development and management.")
+
+@app.route('/sitemap.xml')
+def sitemap():
+    """Generate a sitemap.xml file"""
+    try:
+        root = ET.Element('urlset')
+        root.set('xmlns', 'http://www.sitemaps.org/schemas/sitemap/0.9')
+        
+        # Add main pages
+        main_pages = ['', 'offerings', 'solutions', 'resume', 'tools', 'blogs']
+        for page in main_pages:
+            url = ET.SubElement(root, 'url')
+            loc = ET.SubElement(url, 'loc')
+            loc.text = f"{app.config['SITE_URL']}/{page}" if page else app.config['SITE_URL']
+            lastmod = ET.SubElement(url, 'lastmod')
+            lastmod.text = datetime.now().strftime('%Y-%m-%d')
+            changefreq = ET.SubElement(url, 'changefreq')
+            changefreq.text = 'weekly'
+            priority = ET.SubElement(url, 'priority')
+            priority.text = '1.0' if not page else '0.8'
+        
+        # Add blog posts
+        blog_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'content', 'blogs')
+        if os.path.exists(blog_folder):
+            blog_files = [f for f in os.listdir(blog_folder) if f.endswith('.md')]
+            for blog_file in blog_files:
+                slug = os.path.splitext(blog_file)[0]
+                url = ET.SubElement(root, 'url')
+                loc = ET.SubElement(url, 'loc')
+                loc.text = f"{app.config['SITE_URL']}/blog/{slug}"
+                lastmod = ET.SubElement(url, 'lastmod')
+                # Use file modification date
+                file_path = os.path.join(blog_folder, blog_file)
+                lastmod.text = datetime.fromtimestamp(os.path.getmtime(file_path)).strftime('%Y-%m-%d')
+                changefreq = ET.SubElement(url, 'changefreq')
+                changefreq.text = 'monthly'
+                priority = ET.SubElement(url, 'priority')
+                priority.text = '0.7'
+        
+        # Return XML content
+        xml_content = ET.tostring(root, encoding='utf-8')
+        return Response(xml_content, mimetype='application/xml')
+    except Exception as e:
+        app.logger.error(f"Error generating sitemap: {str(e)}")
+        return Response("Error generating sitemap", status=500)
+
+@app.route('/robots.txt')
+def robots():
+    """Serve robots.txt file"""
+    robots_content = f"""User-agent: *
+Allow: /
+Sitemap: {app.config['SITE_URL']}/sitemap.xml
+"""
+    return Response(robots_content, mimetype='text/plain')
 
 # Initialize blog routes
 init_blog_routes(app)
@@ -115,16 +217,21 @@ init_blog_routes(app)
 # Error handlers
 @app.errorhandler(404)
 def page_not_found(e):
-    return render_template('404.html'), 404
+    return render_template('404.html', meta_title="Page Not Found"), 404
 
 @app.errorhandler(500)
 def server_error(e):
-    return render_template('500.html'), 500
+    return render_template('500.html', meta_title="Server Error"), 500
 
 if __name__ == '__main__':
     # Create uploads directory if it doesn't exist
     uploads_dir = os.path.join(app.static_folder, 'uploads')
     if not os.path.exists(uploads_dir):
         os.makedirs(uploads_dir)
+    
+    # Create directory for social sharing images if it doesn't exist
+    og_images_dir = os.path.join(app.static_folder, 'images')
+    if not os.path.exists(og_images_dir):
+        os.makedirs(og_images_dir)
     
     app.run(host='0.0.0.0', debug=True, port=8082) 

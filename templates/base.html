@@ -3,7 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Portfolio{% endblock %}</title>
+    <title>{% block title %}Portfolio{% endblock %} | Krishna Kumar Soni</title>
+    <meta name="description" content="{% block meta_description %}Professional portfolio of Krishna Kumar Soni - Product Development, Management, and Technical Solutions{% endblock %}">
+    <meta name="keywords" content="{% block meta_keywords %}product development, product management, technical solutions, krishna kumar soni{% endblock %}">
+    <link rel="canonical" href="{{ request.url_root }}{{ request.path.lstrip('/') }}">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta property="og:title" content="{% block og_title %}Portfolio | Krishna Kumar Soni{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Professional portfolio of Krishna Kumar Soni - Product Development, Management, and Technical Solutions{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{{ url_for('static', filename='images/og-image.jpg', _external=True) }}{% endblock %}">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="{{ request.url }}">
+    <meta name="twitter:title" content="{% block twitter_title %}Portfolio | Krishna Kumar Soni{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}Professional portfolio of Krishna Kumar Soni - Product Development, Management, and Technical Solutions{% endblock %}">
+    <meta name="twitter:image" content="{% block twitter_image %}{{ url_for('static', filename='images/og-image.jpg', _external=True) }}{% endblock %}">
+    
     <!-- Google Tag Manager -->
     <script>
     // Initialize dataLayer
@@ -34,6 +52,12 @@
     
     <!-- GTM Event Tracking -->
     <script src="{{ url_for('static', filename='js/gtm-events.js') }}"></script>
+    
+    <!-- SEO Enhancements -->
+    <script src="{{ url_for('static', filename='js/schema-generator.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/og-image.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/lazy-load.js') }}"></script>
+    
     <!-- Base styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
     <!-- Layout components -->
@@ -51,8 +75,83 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/offerings.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/resume.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tools.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <!-- Preload key assets -->
+    <link rel="preload" href="{{ url_for('static', filename='css/base.css') }}" as="style">
+    <link rel="preload" href="{{ url_for('static', filename='js/consent-manager.js') }}" as="script">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Structured Data - Person -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": "Krishna Kumar Soni",
+      "url": "{{ request.url_root }}",
+      "jobTitle": "Product Development & Management Specialist",
+      "knowsAbout": ["Product Development", "Product Management", "Technical Solutions"],
+      "sameAs": [
+        "https://www.linkedin.com/in/krishnakumarsoni/",
+        "https://github.com/krishnakumarsoni"
+      ]
+    }
+    </script>
+    
+    <!-- Website Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "url": "{{ request.url_root }}",
+      "name": "Krishna Kumar Soni Portfolio",
+      "description": "Professional portfolio of Krishna Kumar Soni - Product Development, Management, and Technical Solutions",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "{{ request.url_root }}search?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+    
+    <!-- Breadcrumb Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "{{ request.url_root }}"
+        }{% if active_page and active_page != 'home' %},
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "{{ active_page|capitalize }}",
+          "item": "{{ request.url_root }}{{ active_page }}"
+        }{% endif %}{% if blog is defined %},
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "{{ blog.title }}",
+          "item": "{{ request.url }}"
+        }{% endif %}
+      ]
+    }
+    </script>
+    
+    <!-- Page-specific structured data -->
+    {% if blog_json_ld %}
+    <script type="application/ld+json">
+        {{ blog_json_ld | tojson }}
+    </script>
+    {% endif %}
+
     <style>
         /* Global styles */
         * {
@@ -110,7 +209,15 @@
     height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <!-- End Google Tag Manager (noscript) -->
     
+    <!-- Floating logo for mobile view -->
+    <a href="/" class="floating-logo">
+        <img src="{{ url_for('static', filename='images/KKS Logo.png') }}" alt="KKS Logo">
+    </a>
+    
     <nav class="main-nav">
+        <a href="/" class="nav-logo">
+            <img src="{{ url_for('static', filename='images/KKS Logo.png') }}" alt="KKS Logo">
+        </a>
         <ul>
             <li><a href="/" class="{{ 'active' if active_page == 'home' }}"><i class="ph ph-house"></i> Home <span class="keyboard-shortcut">⌘H</span></a></li>
             <li>
@@ -124,7 +231,7 @@
             </li>
             <li><a href="/solutions" class="{{ 'active' if active_page == 'solutions' }}"><i class="ph ph-lightbulb"></i> Solutions <span class="keyboard-shortcut">⌘S</span></a></li>
             <li><a href="/blogs" class="{{ 'active' if active_page == 'blogs' }}"><i class="ph ph-article"></i> Blogs <span class="keyboard-shortcut">⌘B</span></a></li>
-            <li><a href="/resume" class="{{ 'active' if active_page == 'resume' }}"><i class="ph ph-user"></i> Resume <span class="keyboard-shortcut">⌘R</span></a></li>
+            <li><a href="/resume" class="{{ 'active' if active_page == 'resume' }}"><i class="ph ph-user"></i> Resume <span class="keyboard-shortcut">⇧R</span></a></li>
         </ul>
     </nav>
     
@@ -165,6 +272,21 @@
 
         // Keyboard shortcuts
         document.addEventListener('keydown', function(e) {
+            // Handle Shift key shortcuts
+            if (e.shiftKey) {
+                switch(e.key.toLowerCase()) {
+                    case 't':
+                        e.preventDefault();
+                        window.location.href = '/tools';
+                        break;
+                    case 'r':
+                        e.preventDefault();
+                        window.location.href = '/resume';
+                        break;
+                }
+                return;
+            }
+            
             // Only trigger if Command/Meta key is pressed
             if (e.metaKey) {
                 switch(e.key.toLowerCase()) {
@@ -183,10 +305,6 @@
                     case 'b':
                         e.preventDefault();
                         window.location.href = '/blogs';
-                        break;
-                    case 'r':
-                        e.preventDefault();
-                        window.location.href = '/resume';
                         break;
                 }
             }

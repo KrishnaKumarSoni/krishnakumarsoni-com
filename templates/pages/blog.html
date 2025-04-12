@@ -1,173 +1,396 @@
 {% extends "base.html" %}
 
-{% block title %}{{ blog.title }} - Krishna Kumar Soni{% endblock %}
+{% block title %}{{ meta_title }}{% endblock %}
+{% block meta_description %}{{ meta_description }}{% endblock %}
+{% block meta_keywords %}{{ meta_keywords }}{% endblock %}
+
+{% block og_title %}{{ blog.title }}{% endblock %}
+{% block og_description %}{{ blog.excerpt }}{% endblock %}
+{% block og_image %}{{ og_image or url_for('static', filename='images/og-image.jpg', _external=True) }}{% endblock %}
+
+{% block twitter_title %}{{ blog.title }}{% endblock %}
+{% block twitter_description %}{{ blog.excerpt }}{% endblock %}
+{% block twitter_image %}{{ og_image or url_for('static', filename='images/og-image.jpg', _external=True) }}{% endblock %}
 
 {% block content %}
-<div class="container">
-    <article class="blog-post">
-        <header class="blog-header">
-            <div class="blog-meta">
-                <time datetime="{{ blog.date_iso }}">{{ blog.date }}</time>
-                <span class="blog-category">{{ blog.category }}</span>
-            </div>
-            <h1>{{ blog.title }}</h1>
-        </header>
+<article class="blog-container">
+    <!-- Blog header section -->
+    <header class="blog-header">
+        <div class="blog-meta">
+            <time datetime="{{ blog.date_iso }}" class="blog-date">{{ blog.date }}</time>
+            <span class="blog-category">{{ blog.category }}</span>
+        </div>
+        <h1 class="blog-title">{{ blog.title }}</h1>
+        <p class="blog-excerpt">{{ blog.excerpt }}</p>
         
         {% if blog.thumbnail %}
-            <div class="blog-hero">
-                <img src="{{ blog.thumbnail }}" alt="{{ blog.title }}">
-            </div>
+        <div class="blog-thumbnail-container">
+            <img src="{{ blog.thumbnail }}" alt="{{ blog.title }}" class="blog-thumbnail">
+        </div>
         {% endif %}
-        
-        <div class="blog-content">
-            {{ blog.content | safe }}
+    </header>
+    
+    <!-- Table of contents -->
+    {% if blog.toc and blog.toc|length > 1 %}
+    <nav class="blog-toc">
+        <h2>Table of Contents</h2>
+        <ul>
+            {% for heading in blog.toc %}
+                <li class="toc-level-{{ heading.level }}">
+                    <a href="#{{ heading.id }}">{{ heading.text }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+    </nav>
+    {% endif %}
+    
+    <!-- Main blog content -->
+    <div class="blog-content">
+        {{ blog.content|safe }}
+    </div>
+    
+    <!-- Related posts or author section could go here -->
+    <footer class="blog-footer">
+        <div class="blog-author">
+            <span>Written by:</span>
+            <strong>Krishna Kumar Soni</strong>
         </div>
         
-        <footer class="blog-footer">
-            <a href="{{ url_for('blogs') }}" class="back-link">
-                <i class="ri-arrow-left-line"></i>
-                Back to blogs
-            </a>
-        </footer>
-    </article>
-</div>
+        <!-- Social sharing links -->
+        <div class="blog-share">
+            <h3>Share this post:</h3>
+            <div class="share-buttons">
+                <a href="https://twitter.com/intent/tweet?url={{ request.url }}&text={{ blog.title|urlencode }}" 
+                   target="_blank" rel="noopener noreferrer" class="share-button twitter"
+                   data-platform="twitter" data-title="{{ blog.title }}">
+                    <i class="ph ph-twitter-logo"></i> Twitter
+                </a>
+                <a href="https://www.linkedin.com/shareArticle?mini=true&url={{ request.url }}&title={{ blog.title|urlencode }}" 
+                   target="_blank" rel="noopener noreferrer" class="share-button linkedin"
+                   data-platform="linkedin" data-title="{{ blog.title }}">
+                    <i class="ph ph-linkedin-logo"></i> LinkedIn
+                </a>
+                <a href="mailto:?subject={{ blog.title|urlencode }}&body={{ request.url }}" 
+                   class="share-button email"
+                   data-platform="email" data-title="{{ blog.title }}">
+                    <i class="ph ph-envelope"></i> Email
+                </a>
+            </div>
+        </div>
+    </footer>
+</article>
 
 <style>
-.blog-post {
-    max-width: 800px;
-    margin: 4rem auto;
-    padding: 0 1rem;
-}
-
-.blog-header {
-    margin-bottom: 2rem;
-}
-
-.blog-meta {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 1rem;
-}
-
-.blog-meta time {
-    font-family: 'Space Mono', monospace;
-    font-size: 0.875rem;
-    color: #666;
-}
-
-.blog-category {
-    background: rgba(211, 84, 0, 0.1);
-    color: var(--burnt-orange);
-    padding: 0.25rem 0.75rem;
-    border-radius: 1rem;
-    font-size: 0.875rem;
-}
-
-.blog-header h1 {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 2.5rem;
-    line-height: 1.2;
-    margin: 0;
-    color: var(--text-dark);
-}
-
-.blog-hero {
-    margin: 2rem -1rem;
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-.blog-hero img {
-    width: 100%;
-    height: auto;
-    display: block;
-}
-
-.blog-content {
-    font-size: 1.125rem;
-    line-height: 1.8;
-    color: var(--text-dark);
-}
-
-.blog-content p {
-    margin: 1.5rem 0;
-}
-
-.blog-content h2 {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 1.75rem;
-    margin: 2.5rem 0 1rem;
-}
-
-.blog-content h3 {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 1.5rem;
-    margin: 2rem 0 1rem;
-}
-
-.blog-content ul, 
-.blog-content ol {
-    margin: 1.5rem 0;
-    padding-left: 1.5rem;
-}
-
-.blog-content li {
-    margin: 0.5rem 0;
-}
-
-.blog-content a {
-    color: var(--burnt-orange);
-    text-decoration: none;
-}
-
-.blog-content a:hover {
-    text-decoration: underline;
-}
-
-.blog-footer {
-    margin-top: 4rem;
-    padding-top: 2rem;
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.back-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--burnt-orange);
-    text-decoration: none;
-    font-weight: 500;
-}
-
-.back-link:hover {
-    text-decoration: underline;
-}
-
-@media (max-width: 768px) {
-    .blog-post {
-        margin: 2rem auto;
+    .blog-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
     }
-
-    .blog-header h1 {
-        font-size: 2rem;
+    
+    .blog-header {
+        margin-bottom: 2rem;
+        text-align: center;
     }
-
-    .blog-hero {
-        margin: 1.5rem -1rem;
+    
+    .blog-meta {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 1rem;
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
     }
-
+    
+    .blog-category {
+        color: var(--burnt-orange);
+        font-weight: 500;
+    }
+    
+    .blog-title {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        line-height: 1.2;
+    }
+    
+    .blog-excerpt {
+        font-size: 1.2rem;
+        color: #444;
+        line-height: 1.6;
+        margin-bottom: 2rem;
+    }
+    
+    .blog-thumbnail-container {
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+    
+    .blog-thumbnail {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .blog-toc {
+        background: #f8f8f8;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+    }
+    
+    .blog-toc h2 {
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+    }
+    
+    .blog-toc ul {
+        list-style: none;
+        padding-left: 0;
+    }
+    
+    .blog-toc li {
+        margin-bottom: 0.5rem;
+    }
+    
+    .blog-toc a {
+        color: var(--primary-color);
+        text-decoration: none;
+    }
+    
+    .blog-toc a:hover {
+        text-decoration: underline;
+    }
+    
+    .toc-level-2 {
+        font-weight: 500;
+    }
+    
+    .toc-level-3 {
+        padding-left: 1rem;
+        font-size: 0.9rem;
+    }
+    
     .blog-content {
-        font-size: 1rem;
+        line-height: 1.8;
+        font-size: 1.1rem;
     }
-
+    
     .blog-content h2 {
-        font-size: 1.5rem;
+        margin-top: 2.5rem;
+        margin-bottom: 1rem;
+        font-size: 1.8rem;
     }
-
+    
     .blog-content h3 {
-        font-size: 1.25rem;
+        margin-top: 2rem;
+        margin-bottom: 0.8rem;
+        font-size: 1.4rem;
     }
-}
+    
+    .blog-content p {
+        margin-bottom: 1.5rem;
+    }
+    
+    .blog-content img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 4px;
+        margin: 1.5rem 0;
+    }
+    
+    .blog-content a {
+        color: var(--burnt-orange);
+        text-decoration: underline;
+    }
+    
+    .blog-content ul, .blog-content ol {
+        margin-bottom: 1.5rem;
+        padding-left: 1.5rem;
+    }
+    
+    .blog-content li {
+        margin-bottom: 0.5rem;
+    }
+    
+    .blog-content blockquote {
+        border-left: 4px solid var(--burnt-orange);
+        padding-left: 1rem;
+        font-style: italic;
+        color: #555;
+        margin: 1.5rem 0;
+    }
+    
+    .blog-content code {
+        background: #f5f5f5;
+        padding: 0.2rem 0.4rem;
+        border-radius: 4px;
+        font-family: monospace;
+    }
+    
+    .blog-content pre {
+        background: #f5f5f5;
+        padding: 1rem;
+        border-radius: 4px;
+        overflow-x: auto;
+        margin: 1.5rem 0;
+    }
+    
+    .blog-footer {
+        margin-top: 3rem;
+        padding-top: 2rem;
+        border-top: 1px solid #eee;
+    }
+    
+    .blog-author {
+        margin-bottom: 1.5rem;
+    }
+    
+    .blog-share h3 {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .share-buttons {
+        display: flex;
+        gap: 1rem;
+    }
+    
+    .share-button {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        color: white;
+        text-decoration: none;
+        font-weight: 500;
+        transition: background-color 0.2s;
+    }
+    
+    .share-button i {
+        margin-right: 0.5rem;
+    }
+    
+    .share-button.twitter {
+        background: #1DA1F2;
+    }
+    
+    .share-button.linkedin {
+        background: #0077B5;
+    }
+    
+    .share-button.email {
+        background: #333;
+    }
+    
+    .share-button:hover {
+        opacity: 0.9;
+    }
+    
+    @media (max-width: 768px) {
+        .blog-title {
+            font-size: 2rem;
+        }
+        
+        .share-buttons {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+    }
 </style>
-{% endblock %} 
+{% endblock %}
+
+{% block footer_scripts %}
+<script>
+    // Highlight the current TOC item on scroll
+    document.addEventListener('DOMContentLoaded', function() {
+        const headings = document.querySelectorAll('.blog-content h2, .blog-content h3');
+        const tocLinks = document.querySelectorAll('.blog-toc a');
+        
+        // Set up share button click tracking
+        const shareButtons = document.querySelectorAll('.share-button');
+        shareButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                if (window.dataLayer) {
+                    window.dataLayer.push({
+                        event: 'social_share',
+                        platform: this.dataset.platform,
+                        content_title: this.dataset.title
+                    });
+                }
+            });
+        });
+        
+        if (headings.length === 0 || tocLinks.length === 0) return;
+        
+        // Highlight TOC item on scroll
+        window.addEventListener('scroll', function() {
+            let currentHeading = '';
+            
+            headings.forEach(heading => {
+                const headingTop = heading.getBoundingClientRect().top;
+                
+                if (headingTop < 100) {
+                    currentHeading = heading.id;
+                }
+            });
+            
+            tocLinks.forEach(link => {
+                if (link.getAttribute('href') === '#' + currentHeading) {
+                    link.classList.add('active');
+                } else {
+                    link.classList.remove('active');
+                }
+            });
+        });
+    });
+    
+    // Track reading progress
+    document.addEventListener('DOMContentLoaded', function() {
+        const blogTitle = document.querySelector('.blog-title').innerText;
+        let hasReached25 = false, hasReached50 = false, hasReached75 = false, hasReached100 = false;
+        
+        window.addEventListener('scroll', function() {
+            const scrollTop = window.scrollY;
+            const docHeight = document.body.offsetHeight;
+            const winHeight = window.innerHeight;
+            const scrollPercent = scrollTop / (docHeight - winHeight);
+            
+            if (scrollPercent > 0.25 && !hasReached25) {
+                hasReached25 = true;
+                window.dataLayer.push({
+                    'event': 'scroll_milestone',
+                    'scroll_percentage': 25,
+                    'content_title': blogTitle
+                });
+            }
+            
+            if (scrollPercent > 0.5 && !hasReached50) {
+                hasReached50 = true;
+                window.dataLayer.push({
+                    'event': 'scroll_milestone',
+                    'scroll_percentage': 50,
+                    'content_title': blogTitle
+                });
+            }
+            
+            if (scrollPercent > 0.75 && !hasReached75) {
+                hasReached75 = true;
+                window.dataLayer.push({
+                    'event': 'scroll_milestone',
+                    'scroll_percentage': 75,
+                    'content_title': blogTitle
+                });
+            }
+            
+            if (scrollPercent > 0.95 && !hasReached100) {
+                hasReached100 = true;
+                window.dataLayer.push({
+                    'event': 'scroll_milestone',
+                    'scroll_percentage': 100,
+                    'content_title': blogTitle
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}
