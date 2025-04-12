@@ -4,22 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Portfolio{% endblock %} | Krishna Kumar Soni</title>
-    <meta name="description" content="{% block meta_description %}Professional portfolio of Krishna Kumar Soni - Product Development, Management, and Technical Solutions{% endblock %}">
-    <meta name="keywords" content="{% block meta_keywords %}product development, product management, technical solutions, krishna kumar soni{% endblock %}">
+    
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon/favicon-16x16.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='images/favicon/apple-touch-icon.png') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='site.webmanifest') }}">
+    <meta name="theme-color" content="#ffffff">
+    
+    <!-- Primary Meta Tags -->
+    <meta name="title" content="{% block meta_title %}Krishna Kumar Soni - Product Development & Management{% endblock %}">
+    <meta name="description" content="{% block meta_description %}Professional portfolio of Krishna Kumar Soni - Specialized in Product Development, Management, and Technical Solutions. Explore my work in product strategy, development, and innovative solutions.{% endblock %}">
+    <meta name="keywords" content="{% block meta_keywords %}product development, product management, technical solutions, krishna kumar soni, portfolio, product strategy, innovation{% endblock %}">
+    <meta name="author" content="Krishna Kumar Soni">
     <link rel="canonical" href="{{ request.url_root }}{{ request.path.lstrip('/') }}">
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ request.url }}">
-    <meta property="og:title" content="{% block og_title %}Portfolio | Krishna Kumar Soni{% endblock %}">
-    <meta property="og:description" content="{% block og_description %}Professional portfolio of Krishna Kumar Soni - Product Development, Management, and Technical Solutions{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}Krishna Kumar Soni - Product Development & Management{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Professional portfolio of Krishna Kumar Soni - Specialized in Product Development, Management, and Technical Solutions. Explore my work in product strategy, development, and innovative solutions.{% endblock %}">
     <meta property="og:image" content="{% block og_image %}{{ url_for('static', filename='images/og-image.jpg', _external=True) }}{% endblock %}">
     
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:url" content="{{ request.url }}">
-    <meta name="twitter:title" content="{% block twitter_title %}Portfolio | Krishna Kumar Soni{% endblock %}">
-    <meta name="twitter:description" content="{% block twitter_description %}Professional portfolio of Krishna Kumar Soni - Product Development, Management, and Technical Solutions{% endblock %}">
+    <meta name="twitter:title" content="{% block twitter_title %}Krishna Kumar Soni - Product Development & Management{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}Professional portfolio of Krishna Kumar Soni - Specialized in Product Development, Management, and Technical Solutions. Explore my work in product strategy, development, and innovative solutions.{% endblock %}">
     <meta name="twitter:image" content="{% block twitter_image %}{{ url_for('static', filename='images/og-image.jpg', _external=True) }}{% endblock %}">
     
     <!-- Google Tag Manager -->
