@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}Offerings{% endblock %}
+{% block title %}Services{% endblock %}
 
 {% block content %}
 <div class="container">
     <section class="offerings-section">
-        <h1>Offerings</h1>
+        <h1>Services</h1>
 
         <div class="cart-widget">
             <div class="cart-widget-content">
@@ -47,97 +47,158 @@
             </div>
         </div>
 
-        <div class="products-categories">
-            <div class="products-grid">
-                <!-- Products will be loaded via JavaScript -->
-            </div>
+        <div class="offering-cards-container">
+            <!-- Offering cards will be populated via JavaScript -->
         </div>
     </section>
 </div>
 {% endblock %}
 
 {% block footer_scripts %}
-<script src="{{ url_for('static', filename='js/load-products.js') }}"></script>
 <script src="{{ url_for('static', filename='js/offerings.js') }}"></script>
 <script>
-    // This script handles rendering the products from the config
-    document.addEventListener('products:loaded', function() {
-        const productGrid = document.querySelector('.products-grid');
+    document.addEventListener('DOMContentLoaded', function() {
+        const offeringCardsContainer = document.querySelector('.offering-cards-container');
         
         // Get cart items from localStorage
         const cartItems = new Set(JSON.parse(localStorage.getItem('cartItems')) || []);
         
-        // Create product cards for all products
-        PRODUCTS.forEach(product => {
-            const productCard = document.createElement('div');
-            productCard.className = 'product-card';
-            productCard.dataset.id = product.id;
-            
-            // Check if this product is in the cart
-            const isSelected = cartItems.has(product.id);
-            if (isSelected) {
-                productCard.classList.add('selected');
-            }
-            
-            // Image path - use placeholder.jpg if image doesn't exist or is not specified
-            const imagePath = product.image ? 
-                `{{ url_for('static', filename='images/') }}${product.image}` : 
-                `{{ url_for('static', filename='images/placeholder.jpg') }}`;
-            
-            // Apply custom category color if available
-            const categoryStyle = product.color ? 
-                `style="background-color: ${product.color}20; color: ${product.color};"` : 
-                `class="${product.type}"`;
-            
-            productCard.innerHTML = `
-                <div class="product-image">
-                    <img src="${imagePath}" alt="${product.title}" onerror="this.src='{{ url_for('static', filename='images/placeholder.jpg') }}'; this.classList.add('placeholder-img');">
-                </div>
-                <div class="product-category" ${categoryStyle}>
-                    ${product.type.charAt(0).toUpperCase() + product.type.slice(1)}
-                </div>
-                <div class="product-content">
-                    <h3>${product.title}</h3>
-                    <p>${product.description}</p>
-                </div>
-                <div class="card-footer">
-                    <button class="add-to-cart" data-product="${product.id}" aria-label="Add ${product.title} to cart">
-                        <i class="ph ${isSelected ? 'ph-check' : 'ph-shopping-cart-simple'}"></i> ${isSelected ? 'Selected' : 'Add to Cart'}
-                    </button>
-                </div>
-            `;
-            
-            productGrid.appendChild(productCard);
-        });
+        // Offering icons
+        const offeringIcons = {
+            'for-students': 'ph-student',
+            'for-early-professionals': 'ph-briefcase',
+            'for-early-founders': 'ph-rocket-launch',
+            'for-businesses': 'ph-buildings'
+        };
         
-        // Set up event listeners for add to cart buttons
-        document.querySelectorAll('.add-to-cart').forEach(button => {
-            button.addEventListener('click', function() {
-                const productId = this.dataset.product;
-                const productCard = this.closest('.product-card');
+        // Define which offering is popular
+        const popularOffering = 'for-early-professionals';
+        
+        // Original prices for display
+        const originalPrices = {
+            'for-students': '₹999',
+            'for-early-professionals': '₹2999',
+            'for-early-founders': '₹10,999',
+            'for-businesses': '₹24,999'
+        };
+        
+        // Fetch offerings data
+        fetch('/static/configurations/offerings.json')
+            .then(response => response.json())
+            .then(data => {
+                const offerings = data.offerings;
                 
-                // Toggle selected state
-                if (productCard.classList.contains('selected')) {
-                    productCard.classList.remove('selected');
-                    this.innerHTML = '<i class="ph ph-shopping-cart-simple"></i> Add to Cart';
+                // Create offering cards for all offerings
+                offerings.forEach(offering => {
+                    const offeringCard = document.createElement('div');
+                    offeringCard.className = 'offering-card';
+                    offeringCard.dataset.id = offering.id;
                     
-                    // Trigger the equivalent of unchecking a checkbox
-                    const event = new CustomEvent('product:removed', {
-                        detail: { productId }
-                    });
-                    document.dispatchEvent(event);
-                } else {
-                    productCard.classList.add('selected');
-                    this.innerHTML = '<i class="ph ph-check"></i> Selected';
+                    // Format price with comma for thousands
+                    const formattedPrice = new Intl.NumberFormat('en-IN', {
+                        style: 'currency',
+                        currency: 'INR',
+                        maximumFractionDigits: 0
+                    }).format(offering.price);
                     
-                    // Trigger the equivalent of checking a checkbox
-                    const event = new CustomEvent('product:added', {
-                        detail: { productId }
+                    // Determine if slots are limited
+                    const slotsClass = offering.slots_limited ? 'offering-slots limited' : 'offering-slots';
+                    
+                    // Create benefits list HTML
+                    let benefitsHTML = '';
+                    if (offering.benefits && offering.benefits.length > 0) {
+                        benefitsHTML = '<div class="what-you-get"><h4>What You Get:</h4><ul class="benefits-list">';
+                        offering.benefits.forEach(benefit => {
+                            benefitsHTML += `<li><i class="ph ph-check-circle"></i>${benefit}</li>`;
+                        });
+                        benefitsHTML += '</ul></div>';
+                    }
+                    
+                    // Add popular tag if marked as popular
+                    const popularTag = offering.id === popularOffering ? '<div class="popular-tag">Popular</div>' : '';
+                    
+                    offeringCard.innerHTML = `
+                        ${popularTag}
+                        <div class="offering-card-header">
+                            <div class="offering-card-icon">
+                                <i class="ph ${offeringIcons[offering.id] || 'ph-star'}"></i>
+                            </div>
+                            <h3>${offering.title}</h3>
+                        </div>
+                        <div class="offering-card-content">
+                            <p>${offering.description}</p>
+                            ${benefitsHTML}
+                            <div class="offering-card-meta">
+                                <div class="slots-container">
+                                    <span class="${slotsClass}">
+                                        <i class="ph ph-user-circle"></i>${offering.slots_left} slots left this month
+                                    </span>
+                                </div>
+                                <div class="price-container">
+                                    <span class="original-price">${originalPrices[offering.id] || formattedPrice}</span>
+                                    <span class="offering-price">${formattedPrice}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="offering-card-footer">
+                            <button class="offering-cta" data-product="${offering.id}">
+                                <i class="ph ph-shopping-cart-simple"></i> Add to Cart
+                            </button>
+                            <button class="buy-now-btn" data-product="${offering.id}">
+                                <i class="ph ph-lightning"></i> Buy Now
+                            </button>
+                        </div>
+                    `;
+                    
+                    offeringCardsContainer.appendChild(offeringCard);
+                });
+                
+                // Set up event listeners for all offering cards
+                document.querySelectorAll('.offering-cta').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const productId = this.dataset.product;
+                        
+                        // Toggle selected state
+                        if (cartItems.has(productId)) {
+                            cartItems.delete(productId);
+                            this.innerHTML = '<i class="ph ph-shopping-cart-simple"></i> Add to Cart';
+                            
+                            // Trigger product:removed event
+                            const event = new CustomEvent('product:removed', {
+                                detail: { productId }
+                            });
+                            document.dispatchEvent(event);
+                        } else {
+                            cartItems.add(productId);
+                            this.innerHTML = '<i class="ph ph-check"></i> Selected';
+                            
+                            // Trigger product:added event
+                            const event = new CustomEvent('product:added', {
+                                detail: { productId }
+                            });
+                            document.dispatchEvent(event);
+                        }
                     });
-                    document.dispatchEvent(event);
-                }
+                    
+                    // Set initial state based on localStorage
+                    const productId = button.dataset.product;
+                    if (cartItems.has(productId)) {
+                        button.innerHTML = '<i class="ph ph-check"></i> Selected';
+                    }
+                });
+                
+                // Set up Buy Now buttons (will be implemented later)
+                document.querySelectorAll('.buy-now-btn').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const productId = this.dataset.product;
+                        console.log('Buy Now clicked for product:', productId);
+                        // Functionality will be added later
+                    });
+                });
+            })
+            .catch(error => {
+                console.error('Error loading offerings configuration:', error);
             });
-        });
     });
 </script>
 {% endblock %}

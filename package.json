@@ -1,0 +1,16 @@
+{
+  "name": "krishnakumarsoni",
+  "version": "1.0.0",
+  "description": "A minimal, modern portfolio website built with Flask.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "jsonwebtoken": "^9.0.2",
+    "node-fetch": "^2.7.0"
+  }
+}

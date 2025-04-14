@@ -1,0 +1,60 @@
+{
+  "offerings": [
+    {
+      "id": "for-students",
+      "title": "For Students",
+      "description": "Let me personally guide you through your early career journey with focused 1-on-1 mentoring. I'll help you navigate the tech and product industry landscape, drawing from my own experience to give you practical insights.",
+      "benefits": [
+        "2 personal two-hour sessions within 30 days",
+        "5-Year Career Planning Roadmap",
+        "Detailed review of your professional profiles"
+      ],
+      "slots_left": 5,
+      "slots_limited": true,
+      "price": 499
+    },
+    {
+      "id": "for-early-professionals",
+      "title": "For Early Professionals",
+      "description": "Work directly with me to accelerate your career growth in tech. I'll share battle-tested strategies from my experience to help you overcome challenges and create meaningful impact in your role.",
+      "benefits": [
+        "2 focused two-hour sessions within 30 days",
+        "Personalized resume & portfolio enhancement",
+        "Proven job hunting & interview strategies",
+        "Real solutions for your workplace challenges"
+      ],
+      "slots_left": 5,
+      "slots_limited": true,
+      "price": 1599
+    },
+    {
+      "id": "for-early-founders",
+      "title": "For Early Founders",
+      "description": "Let me help you transform your vision into reality. Drawing from my founder experience, I'll guide you through the crucial early stages of your startup journey with practical, actionable advice.",
+      "benefits": [
+        "3 intensive two-hour sessions with me within 30 days",
+        "Direct idea validation & brainstorming together",
+        "Personalized go-to-market strategy planning",
+        "One-on-one brand & design direction",
+        "1 hr strategy session to explore ongoing partnership"
+      ],
+      "slots_left": 5,
+      "slots_limited": true,
+      "price": 4599
+    },
+    {
+      "id": "for-businesses",
+      "title": "For Businesses",
+      "description": "Partner with me to elevate your business through strategic tech implementation. I'll personally help you identify and leverage the right tools and processes to boost your team's efficiency.",
+      "benefits": [
+        "3 Hr hands-on AI training for your teams",
+        "Direct B2B SaaS strategy consultation",
+        "Custom workflow automation planning",
+        "1 hr strategy session to explore ongoing partnership"
+      ],
+      "slots_left": 5,
+      "slots_limited": true,
+      "price": 9999
+    }
+  ]
+} 

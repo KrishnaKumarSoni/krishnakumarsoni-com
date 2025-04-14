@@ -10,14 +10,43 @@ document.addEventListener('DOMContentLoaded', function() {
     const emailInput = document.querySelector('.email-input');
     const submitEmail = document.querySelector('.submit-email');
     const closeBanner = document.querySelector('.close-banner');
+    const totalPrice = document.querySelector('.total-price');
+    const totalAmount = document.querySelector('.total-amount');
     
     // Initialize selectedItems from localStorage or create new Set
     let selectedItems = new Set(JSON.parse(localStorage.getItem('cartItems')) || []);
     let isEmailMode = false;
+    let OFFERINGS = [];
 
     // Initially hide the cart widget and details
     cartWidget.style.display = 'none';
     cartDetails.classList.remove('expanded');
+
+    // Fetch offerings data
+    fetch('/static/configurations/offerings.json')
+        .then(response => response.json())
+        .then(data => {
+            OFFERINGS = data.offerings;
+            updateInitialState();
+        })
+        .catch(error => {
+            console.error('Error loading offerings configuration:', error);
+        });
+
+    function updateInitialState() {
+        // Set initial state for offering cards based on localStorage
+        document.querySelectorAll('.offering-card').forEach(card => {
+            const productId = card.dataset.id;
+            const ctaButton = card.querySelector('.offering-cta');
+            
+            if (selectedItems.has(productId)) {
+                ctaButton.innerHTML = '<i class="ph ph-check"></i> Selected';
+            }
+        });
+        
+        // Initialize cart
+        updateCart();
+    }
 
     function updateCart() {
         const count = selectedItems.size;
@@ -43,32 +72,55 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 300);
         }
         
+        // Calculate total price
+        let total = 0;
+        
         // Update cart items
         cartItems.innerHTML = '';
         selectedItems.forEach(productId => {
-            // Find the product in the PRODUCTS array
-            const product = PRODUCTS.find(p => p.id === productId);
-            if (product) {
+            // Find the offering in the OFFERINGS array
+            const offering = OFFERINGS.find(o => o.id === productId);
+            if (offering) {
                 const itemElement = document.createElement('div');
                 itemElement.className = 'cart-item';
+                
+                // Format price with commas for thousands
+                const formattedPrice = new Intl.NumberFormat('en-IN', {
+                    style: 'currency',
+                    currency: 'INR',
+                    maximumFractionDigits: 0
+                }).format(offering.price);
+                
                 itemElement.innerHTML = `
-                    <span class="item-name">${product.title}</span>
-                    <span class="item-price">₹0</span>
+                    <span class="item-name">${offering.title}</span>
+                    <span class="item-price">${formattedPrice}</span>
                 `;
                 cartItems.appendChild(itemElement);
+                
+                total += offering.price;
             }
         });
+        
+        // Format total with commas for thousands
+        const formattedTotal = new Intl.NumberFormat('en-IN', {
+            style: 'currency',
+            currency: 'INR',
+            maximumFractionDigits: 0
+        }).format(total);
+        
+        // Update total display
+        totalPrice.textContent = formattedTotal;
+        totalAmount.textContent = formattedTotal;
     }
 
     function clearCart() {
         selectedItems.clear();
         
-        // Deselect all product cards
-        document.querySelectorAll('.product-card').forEach(card => {
-            card.classList.remove('selected');
-            const addButton = card.querySelector('.add-to-cart');
-            if (addButton) {
-                addButton.innerHTML = '<i class="ph ph-shopping-cart-simple"></i> Add to Cart';
+        // Deselect all offering cards
+        document.querySelectorAll('.offering-card').forEach(card => {
+            const ctaButton = card.querySelector('.offering-cta');
+            if (ctaButton) {
+                ctaButton.innerHTML = '<i class="ph ph-shopping-cart-simple"></i> Add to Cart';
             }
         });
         
@@ -108,13 +160,12 @@ document.addEventListener('DOMContentLoaded', function() {
         selectedItems.add(productId);
         updateCart();
         
-        // Make sure the product card is visually selected
-        const productCard = document.querySelector(`.product-card[data-id="${productId}"]`);
-        if (productCard) {
-            productCard.classList.add('selected');
-            const addButton = productCard.querySelector('.add-to-cart');
-            if (addButton) {
-                addButton.innerHTML = '<i class="ph ph-check"></i> Selected';
+        // Make sure the offering card button is visually selected
+        const offeringCard = document.querySelector(`.offering-card[data-id="${productId}"]`);
+        if (offeringCard) {
+            const ctaButton = offeringCard.querySelector('.offering-cta');
+            if (ctaButton) {
+                ctaButton.innerHTML = '<i class="ph ph-check"></i> Selected';
             }
         }
     });
@@ -124,13 +175,12 @@ document.addEventListener('DOMContentLoaded', function() {
         selectedItems.delete(productId);
         updateCart();
         
-        // Make sure the product card is visually unselected
-        const productCard = document.querySelector(`.product-card[data-id="${productId}"]`);
-        if (productCard) {
-            productCard.classList.remove('selected');
-            const addButton = productCard.querySelector('.add-to-cart');
-            if (addButton) {
-                addButton.innerHTML = '<i class="ph ph-shopping-cart-simple"></i> Add to Cart';
+        // Make sure the offering card button is visually unselected
+        const offeringCard = document.querySelector(`.offering-card[data-id="${productId}"]`);
+        if (offeringCard) {
+            const ctaButton = offeringCard.querySelector('.offering-cta');
+            if (ctaButton) {
+                ctaButton.innerHTML = '<i class="ph ph-shopping-cart-simple"></i> Add to Cart';
             }
         }
     });
@@ -185,11 +235,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Clear cart items but maintain visibility
             selectedItems.clear();
-            document.querySelectorAll('.product-card').forEach(card => {
-                card.classList.remove('selected');
-                const addButton = card.querySelector('.add-to-cart');
-                if (addButton) {
-                    addButton.innerHTML = '<i class="ph ph-shopping-cart-simple"></i> Add to Cart';
+            document.querySelectorAll('.offering-card').forEach(card => {
+                const ctaButton = card.querySelector('.offering-cta');
+                if (ctaButton) {
+                    ctaButton.innerHTML = '<i class="ph ph-shopping-cart-simple"></i> Add to Cart';
                 }
             });
             
@@ -232,13 +281,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Mark selected products based on localStorage data when page loads
     if (selectedItems.size > 0) {
-        document.querySelectorAll('.product-card').forEach(card => {
+        document.querySelectorAll('.offering-card').forEach(card => {
             const productId = card.dataset.id;
             if (selectedItems.has(productId)) {
-                card.classList.add('selected');
-                const addButton = card.querySelector('.add-to-cart');
-                if (addButton) {
-                    addButton.innerHTML = '<i class="ph ph-check"></i> Selected';
+                const ctaButton = card.querySelector('.offering-cta');
+                if (ctaButton) {
+                    ctaButton.innerHTML = '<i class="ph ph-check"></i> Selected';
                 }
             }
         });
