@@ -32,6 +32,7 @@
         background: #f0f0f0;
         margin-bottom: 0.8rem;
         border-radius: 12px;
+        object-fit: cover;
     }
     
     .solution-card h3 {
@@ -83,7 +84,7 @@
         <h1>Solutions</h1>
         <div class="solutions-grid">
             <div class="solution-card">
-                <div class="solution-image"></div>
+                <img src="{{ url_for('static', filename='images/solutions/Beatscript.png') }}" alt="Beatscript" class="solution-image">
                 <h3><i class="ph ph-music-notes"></i>Beatscript</h3>
                 <p>Don't yap the wrong words. Use Beatscript. Get Lyrics to any song on YouTube.</p>
                 <a href="https://github.com/KrishnaKumarSoni/beatscript/" class="try-button" target="_blank">
@@ -92,7 +93,7 @@
             </div>
             
             <div class="solution-card">
-                <div class="solution-image"></div>
+                <img src="{{ url_for('static', filename='images/solutions/BoreScroll.png') }}" alt="Borescroll X" class="solution-image">
                 <h3><i class="ph ph-scroll"></i>Borescroll X</h3>
                 <p>Too lazy to scroll on X? Me too. Just install & Borescroll!. No Login or sign up required.</p>
                 <a href="https://chromewebstore.google.com/detail/borescroll-lazy-scroller/pajamockneobkfjkmgpbhlmcaabigple" class="try-button" target="_blank">
@@ -101,7 +102,7 @@
             </div>
             
             <div class="solution-card">
-                <div class="solution-image"></div>
+                <img src="{{ url_for('static', filename='images/solutions/Ripple Search.png') }}" alt="RippleSearch" class="solution-image">
                 <h3><i class="ph ph-magnifying-glass"></i>RippleSearch</h3>
                 <p>Generate large lead lists from Google Maps with contact information and business insights!</p>
                 <a href="https://github.com/krishnakumarsoni/ripplesearch" class="try-button" target="_blank">
@@ -110,7 +111,7 @@
             </div>
             
             <div class="solution-card">
-                <div class="solution-image"></div>
+                <img src="{{ url_for('static', filename='images/solutions/Ripple Reach.png') }}" alt="RippleReach" class="solution-image">
                 <h3><i class="ph ph-handshake"></i>RippleReach</h3>
                 <p>Perform hyper personalised warm outreach and convert leads while you sleep peacefully!</p>
                 <a href="https://github.com/krishnakumarsoni/ripplereach" class="try-button" target="_blank">
@@ -119,7 +120,7 @@
             </div>
             
             <div class="solution-card">
-                <div class="solution-image"></div>
+                <img src="{{ url_for('static', filename='images/solutions/Pearmock.png') }}" alt="Pearmock" class="solution-image">
                 <h3><i class="ph ph-users-three"></i>Pearmock</h3>
                 <p>A community driven platform for product managers to build connections, practice case interviews and compete among each other for exciting prices!</p>
                 <a href="https://pearmock.com" class="try-button" target="_blank">
@@ -128,7 +129,7 @@
             </div>
             
             <div class="solution-card">
-                <div class="solution-image"></div>
+                <img src="{{ url_for('static', filename='images/solutions/BoldDrop.png') }}" alt="Boldprop" class="solution-image">
                 <h3><i class="ph ph-file-text"></i>Boldprop</h3>
                 <p>Helps agencies and freelancers to quickly write a proposal for the clients by just providing the meeting transcript or the client brief.</p>
                 <a href="https://www.boldprop.in/" class="try-button" target="_blank">
@@ -137,7 +138,7 @@
             </div>
             
             <div class="solution-card">
-                <div class="solution-image"></div>
+                <img src="{{ url_for('static', filename='images/solutions/Bloggles.png') }}" alt="Blogggles" class="solution-image">
                 <h3><i class="ph ph-article"></i>Blogggles</h3>
                 <p>Visit Blogggles and enter the public chat URL of your chat with ChatGPT. We'll take your chat and write a neat blog out of it!</p>
                 <a href="https://github.com/KrishnaKumarSoni/blog-from-gpt" class="try-button" target="_blank">
@@ -146,7 +147,7 @@
             </div>
             
             <div class="solution-card">
-                <div class="solution-image"></div>
+                <img src="{{ url_for('static', filename='images/solutions/Bulk Mailer.png') }}" alt="Bulk mailer" class="solution-image">
                 <h3><i class="ph ph-envelope"></i>Bulk mailer</h3>
                 <p>Connect your Sales Google Sheets with LinkedIn profile URLs and write 100 or even 1000 personalised cold emails with lead magnet for each on auto-pilot!</p>
                 <a href="https://github.com/KrishnaKumarSoni/bulk-cold-mailer" class="try-button" target="_blank">
@@ -155,7 +156,7 @@
             </div>
             
             <div class="solution-card">
-                <div class="solution-image"></div>
+                <img src="{{ url_for('static', filename='images/solutions/Web Page Optimiser.png') }}" alt="Web Page Optimiser" class="solution-image">
                 <h3><i class="ph ph-chart-line-up"></i>Web Page Optimiser</h3>
                 <p>Enter the URL and get a detailed content and UI optimisation suggestions tailored to optimise your specific business goal.</p>
                 <a href="https://github.com/KrishnaKumarSoni/ui-design-analyser" class="try-button" target="_blank">
