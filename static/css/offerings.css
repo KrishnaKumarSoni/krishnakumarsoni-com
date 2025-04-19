@@ -131,6 +131,7 @@
     opacity: 0.9;
 }
 
+/* Media Queries */
 @media (max-width: 1200px) {
     .offerings-section {
         padding: 2rem 1rem;

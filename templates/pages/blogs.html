@@ -20,17 +20,18 @@
                             <time datetime="{{ blog.date_iso }}">{{ blog.date }}</time>
                             <span class="blog-category">{{ blog.category }}</span>
                             {% if is_local %}
-                                <button class="edit-blog-btn" onclick="showEditForm('{{ blog.slug }}', {{ blog|tojson|safe }})">
+                                <button class="edit-blog-btn" onclick="showEditForm('{{ blog.id }}', {{ blog|tojson|safe }})">
                                     <i class="ri-edit-line"></i>
+                                </button>
+                                <button class="delete-blog-btn" onclick="deleteBlog('{{ blog.id }}')">
+                                    <i class="ri-delete-bin-line"></i>
                                 </button>
                             {% endif %}
                         </div>
                         <h2 class="blog-title">
                             <a href="{{ url_for('blog', slug=blog.slug) }}">{{ blog.title }}</a>
                         </h2>
-                        {% if blog.subtitle %}
-                            <p class="blog-subtitle">{{ blog.subtitle }}</p>
-                        {% endif %}
+                        <p class="blog-excerpt">{{ blog.excerpt }}</p>
                     </div>
                 </article>
             {% endfor %}
@@ -45,16 +46,12 @@
                         <input type="text" id="title" name="title" required>
                     </div>
                     <div class="form-group">
-                        <label for="subtitle">Subtitle</label>
-                        <input type="text" id="subtitle" name="subtitle">
-                    </div>
-                    <div class="form-group">
                         <label for="category">Category</label>
                         <input type="text" id="category" name="category" required>
                     </div>
                     <div class="form-group">
-                        <label for="thumbnail">Thumbnail URL (optional)</label>
-                        <input type="url" id="thumbnail" name="thumbnail">
+                        <label for="thumbnail">Thumbnail</label>
+                        <input type="file" id="thumbnail" name="thumbnail" accept="image/*">
                     </div>
                     <div class="form-group">
                         <label for="content">Content (Markdown)</label>
@@ -74,22 +71,19 @@
                         </button>
                     </div>
                     <form class="blog-form" action="{{ url_for('edit_blog') }}" method="POST" enctype="multipart/form-data" id="editForm">
-                        <input type="hidden" name="slug" id="editSlug">
+                        <input type="hidden" name="blog_id" id="editBlogId">
                         <div class="form-group">
                             <label for="editTitle">Title</label>
                             <input type="text" id="editTitle" name="title" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="editSubtitle">Subtitle</label>
-                            <input type="text" id="editSubtitle" name="subtitle">
                         </div>
                         <div class="form-group">
                             <label for="editCategory">Category</label>
                             <input type="text" id="editCategory" name="category" required>
                         </div>
                         <div class="form-group">
-                            <label for="editThumbnail">Thumbnail URL (optional)</label>
-                            <input type="url" id="editThumbnail" name="thumbnail">
+                            <label for="editThumbnail">Thumbnail</label>
+                            <input type="file" id="editThumbnail" name="thumbnail" accept="image/*">
+                            <div id="currentThumbnail"></div>
                         </div>
                         <div class="form-group">
                             <label for="editContent">Content (Markdown)</label>
@@ -99,6 +93,52 @@
                     </form>
                 </div>
             </div>
+
+            <script>
+            function showEditForm(blogId, blog) {
+                document.getElementById('editBlogId').value = blogId;
+                document.getElementById('editTitle').value = blog.title;
+                document.getElementById('editCategory').value = blog.category;
+                document.getElementById('editContent').value = blog.content;
+                
+                const currentThumb = document.getElementById('currentThumbnail');
+                if (blog.thumbnail) {
+                    currentThumb.innerHTML = `<img src="${blog.thumbnail}" alt="Current thumbnail" style="max-width: 200px; margin: 10px 0;">`;
+                } else {
+                    currentThumb.innerHTML = '';
+                }
+                
+                document.getElementById('editModal').style.display = 'block';
+            }
+
+            function closeEditModal() {
+                document.getElementById('editModal').style.display = 'none';
+            }
+
+            function deleteBlog(blogId) {
+                if (confirm('Are you sure you want to delete this blog?')) {
+                    fetch('/blog/delete', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ blog_id: blogId })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            alert('Error deleting blog: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Error deleting blog');
+                    });
+                }
+            }
+            </script>
         {% endif %}
     </section>
 </div>
@@ -183,11 +223,29 @@
     color: var(--burnt-orange);
 }
 
-.blog-subtitle {
+.blog-excerpt {
     color: #666;
     font-size: 1rem;
     line-height: 1.5;
     margin: 0;
+}
+
+.edit-blog-btn,
+.delete-blog-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #666;
+    padding: 0.25rem;
+    transition: color 0.2s ease;
+}
+
+.edit-blog-btn:hover {
+    color: var(--burnt-orange);
+}
+
+.delete-blog-btn:hover {
+    color: #dc3545;
 }
 
 .admin-section {
@@ -198,7 +256,7 @@
 
 .blog-form {
     max-width: 800px;
-    margin-top: 1.5rem;
+    margin: 2rem 0;
 }
 
 .form-group {
@@ -216,9 +274,8 @@
 .form-group textarea {
     width: 100%;
     padding: 0.75rem;
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    border-radius: 8px;
-    font-family: inherit;
+    border: 1px solid #ddd;
+    border-radius: 4px;
     font-size: 1rem;
 }
 
@@ -227,62 +284,43 @@
     color: white;
     border: none;
     padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    font-weight: 500;
+    border-radius: 4px;
     cursor: pointer;
-    transition: opacity 0.2s ease;
+    font-size: 1rem;
+    transition: background-color 0.2s ease;
 }
 
 .submit-btn:hover {
-    opacity: 0.9;
+    background-color: #bf4800;
 }
 
-.edit-blog-btn {
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    color: #666;
-    opacity: 0.6;
-    transition: opacity 0.2s ease;
-}
-
-.edit-blog-btn:hover {
-    opacity: 1;
-}
-
-.edit-blog-btn i {
-    font-size: 0.875rem;
-}
-
-/* Modal styles */
 .modal {
     display: none;
     position: fixed;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
+    width: 100%;
+    height: 100%;
     background: rgba(0, 0, 0, 0.5);
     z-index: 1000;
-    padding: 2rem;
-    overflow-y: auto;
 }
 
 .modal-content {
     background: white;
-    padding: 2rem;
-    border-radius: 12px;
+    width: 90%;
     max-width: 800px;
     margin: 2rem auto;
-    position: relative;
+    padding: 2rem;
+    border-radius: 8px;
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
 .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
 }
 
 .close-modal {
@@ -290,71 +328,11 @@
     border: none;
     font-size: 1.5rem;
     cursor: pointer;
-    padding: 0.5rem;
-    margin: -0.5rem;
     color: #666;
-    transition: color 0.2s ease;
 }
 
 .close-modal:hover {
     color: var(--burnt-orange);
 }
-
-@media (max-width: 768px) {
-    .blog-item {
-        flex-direction: row;
-        gap: 1rem;
-        padding: 1.5rem 0;
-    }
-
-    .blog-thumbnail {
-        width: 120px;
-        height: 60px;
-    }
-
-    .blog-number {
-        padding-top: 0;
-    }
-
-    .modal {
-        padding: 1rem;
-    }
-
-    .modal-content {
-        padding: 1.5rem;
-        margin: 1rem auto;
-    }
-}
-
-@media (max-width: 480px) {
-    .blog-thumbnail {
-        width: 100px;
-        height: 50px;
-    }
-    
-    .blog-title {
-        font-size: 1.25rem;
-    }
-    
-    .blog-subtitle {
-        font-size: 0.9rem;
-    }
-}
 </style>
-
-<script>
-function showEditForm(slug, blogData) {
-    document.getElementById('editSlug').value = slug;
-    document.getElementById('editTitle').value = blogData.title;
-    document.getElementById('editSubtitle').value = blogData.subtitle || '';
-    document.getElementById('editCategory').value = blogData.category;
-    document.getElementById('editThumbnail').value = blogData.thumbnail || '';
-    document.getElementById('editContent').value = blogData.content;
-    document.getElementById('editModal').style.display = 'block';
-}
-
-function closeEditModal() {
-    document.getElementById('editModal').style.display = 'none';
-}
-</script>
 {% endblock %}

@@ -4,10 +4,10 @@
     border-radius: 20px;
     border: 1px solid var(--burnt-orange);
     margin: 0.75rem 0 1.5rem;
-    overflow: hidden;
+    overflow: visible;
     opacity: 0;
-    transform: translateY(-20px);
-    transition: transform 0.3s ease, opacity 0.3s ease, background-color 0.01s linear 0.3s;
+    transform: translateY(1rem);
+    transition: all 0.3s ease;
     position: sticky;
     top: calc(var(--nav-height) + 1rem);
     z-index: 100;
@@ -29,6 +29,7 @@
     padding: 0.75rem 1.25rem;
     position: relative;
     background: #ffe8d9;
+    border-radius: 20px;
     transition: all 0.3s ease;
 }
 
@@ -288,4 +289,226 @@
     .email-input {
         padding: 0.5rem 2.5rem 0.5rem 0.75rem;
     }
+}
+
+/* Phone Input and OTP Styling */
+.phone-input-container {
+    margin: 0rem 0;
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.phone-container {
+    flex: 1;
+    position: relative;
+    z-index: 9999;
+}
+
+.phone-input {
+    width: 100%;
+    padding: 0.75rem 3.5rem;
+    font-size: 1rem;
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 0.5rem;
+    background-color: var(--bg-color, #fff);
+    color: var(--text-color, #334155);
+    transition: all 0.3s ease;
+    height: 36px;
+}
+
+.phone-input:focus {
+    border-color: var(--primary-color, var(--burnt-orange));
+    box-shadow: 0 0 0 2px rgba(211, 84, 0, 0.1);
+    outline: none;
+}
+
+/* IntlTelInput Custom Styling */
+.iti {
+    width: 100%;
+    margin-bottom: 0;
+    display: block;
+    position: relative;
+}
+
+.iti__flag-container {
+    padding: 0;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    z-index: 9999;
+}
+
+.iti__selected-flag {
+    background-color: var(--bg-color, #fff) !important;
+    border-radius: 0.5rem 0 0 0.5rem;
+    height: 36px;
+    padding: 0 12px 0 12px;
+    display: flex;
+    align-items: center;
+}
+
+.iti__country-list {
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-color, #e2e8f0);
+    background-color: var(--bg-color, #fff);
+    color: var(--text-color, #334155);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    max-height: 200px;
+    position: absolute;
+    z-index: 9999;
+    overflow-y: auto;
+    margin-top: 2px;
+    left: 0;
+    top: 36px;
+    width: 260px;
+}
+
+.cart-widget .iti__country-list {
+    /* Ensure it appears inside the cart widget */
+    min-width: 260px;
+    width: auto;
+    max-width: 300px;
+}
+
+/* Button Styling */
+.submit-phone,
+.verify-otp,
+.checkout-button,
+.pay-button {
+    padding: 0.7rem 1.2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--white, #fff);
+    background: var(--primary-gradient, linear-gradient(to right, #D35400, #e67e22));
+    background-color: var(--burnt-orange, #D35400);
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px -1px rgba(211, 84, 0, 0.2);
+    height: 36px;
+}
+
+.phone-input-container .submit-phone {
+    width: 36px;
+    min-width: 36px;
+    padding: 0;
+    flex-shrink: 0;
+    border-radius: 0.5rem;
+}
+
+.submit-phone:hover,
+.verify-otp:hover,
+.checkout-button:hover,
+.pay-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 8px -1px rgba(211, 84, 0, 0.3);
+    opacity: 0.95;
+}
+
+.submit-phone:active,
+.verify-otp:active,
+.checkout-button:active,
+.pay-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px -1px rgba(211, 84, 0, 0.2);
+}
+
+.submit-phone i,
+.verify-otp i,
+.checkout-button i,
+.pay-button i {
+    font-size: 1.25rem;
+}
+
+/* Phone navigation buttons */
+.back-button {
+    position: absolute;
+    left: -44px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #FFF4EE;
+    border: 1px solid rgba(211, 84, 0, 0.2);
+    color: var(--burnt-orange, #D35400);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 10;
+}
+
+.back-button:hover {
+    background: #FFECDF;
+}
+
+/* OTP Input Styling */
+.otp-input-container {
+    margin: 0rem 0;
+    position: relative;
+}
+
+.otp-inputs {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin: 0rem 0.5rem;
+}
+
+.otp-inputs input {
+    width: 36px;
+    height: 36px;
+    text-align: center;
+    font-size: 1rem;
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 0.5rem;
+    background-color: var(--bg-color, #fff);
+    color: var(--text-color, #334155);
+    transition: all 0.3s ease;
+}
+
+.otp-inputs input:focus {
+    border-color: var(--primary-color, var(--burnt-orange));
+    box-shadow: 0 0 0 2px rgba(211, 84, 0, 0.1);
+    outline: none;
+}
+
+.verify-otp {
+    width: 100%;
+    margin-top: 0rem;
+}
+
+/* Success State */
+.verification-success {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--success-color, #22c55e);
+    font-weight: 500;
+    padding: 0.5rem 0;
+}
+
+.verification-success i {
+    font-size: 1rem;
+}
+
+/* Disabled State */
+.phone-input:disabled {
+    background-color: var(--disabled-bg, #f8f9fa);
+    border-color: var(--border-color, #e2e8f0);
+    cursor: not-allowed;
+    opacity: 0.7;
 } 
