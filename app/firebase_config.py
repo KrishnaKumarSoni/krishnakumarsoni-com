@@ -27,44 +27,42 @@ def get_formatted_private_key():
     
     # Split the key into parts
     parts = key.split('\\n')
-    
-    # Remove any empty parts and extra whitespace
-    parts = [part.strip() for part in parts if part.strip()]
-    
-    if not parts:
-        print("Key appears to be empty after processing")
+    if len(parts) < 3:
+        print("Private key appears malformed - not enough parts after splitting")
         return None
-    
-    # Verify we have the header and footer
-    if parts[0] != "-----BEGIN PRIVATE KEY-----" or parts[-1] != "-----END PRIVATE KEY-----":
-        print("Key is missing proper header or footer")
-        return None
-    
-    # Get the base64 content (everything between header and footer)
-    content = ''.join(parts[1:-1])
-    
-    # Format the key with proper line breaks
+        
+    # Reconstruct the key with proper line breaks
     formatted_parts = []
-    formatted_parts.append("-----BEGIN PRIVATE KEY-----")
+    for part in parts:
+        part = part.strip()
+        if part:  # Only add non-empty parts
+            if part == "-----BEGIN PRIVATE KEY-----" or part == "-----END PRIVATE KEY-----":
+                formatted_parts.append(part)
+            else:
+                # Add base64 content in chunks
+                while part:
+                    formatted_parts.append(part[:64])
+                    part = part[64:]
     
-    # Split content into 64-character chunks
-    for i in range(0, len(content), 64):
-        formatted_parts.append(content[i:i+64])
-    
-    formatted_parts.append("-----END PRIVATE KEY-----")
-    
-    # Join with proper newlines
-    formatted_key = '\n'.join(formatted_parts)
+    # Join with proper newlines and ensure final newline
+    formatted_key = '\n'.join(formatted_parts) + '\n'
     
     # Debug output
-    print("\nProcessed key details:")
-    print(f"1. Total parts: {len(formatted_parts)}")
-    print(f"2. Content length: {len(content)}")
-    print("3. Structure verification:")
-    print(f"   - Header present: {formatted_parts[0] == '-----BEGIN PRIVATE KEY-----'}")
-    print(f"   - Footer present: {formatted_parts[-1] == '-----END PRIVATE KEY-----'}")
-    print(f"   - Content lines: {len(formatted_parts) - 2}")  # Subtract header and footer
-    print(f"   - First content line length: {len(formatted_parts[1]) if len(formatted_parts) > 2 else 0}")
+    print("\nKey formatting details:")
+    print(f"1. Number of lines: {len(formatted_parts)}")
+    print("2. Line lengths:")
+    for i, line in enumerate(formatted_parts):
+        if i < 3 or i > len(formatted_parts) - 3:  # Show first and last few lines
+            print(f"   Line {i+1}: {len(line)} chars")
+    print("3. Sample structure:")
+    print(f"   First line: {formatted_parts[0]}")
+    print(f"   Second line: {formatted_parts[1][:10]}...")
+    print(f"   Last line: {formatted_parts[-1]}")
+    print("4. Final newline present:", formatted_key.endswith('\n'))
+    print("5. Raw key structure:")
+    print(f"   Header present: {'-----BEGIN PRIVATE KEY-----' in formatted_key}")
+    print(f"   Footer present: {'-----END PRIVATE KEY-----' in formatted_key}")
+    print(f"   Number of line breaks: {formatted_key.count('\n')}")
     
     return formatted_key
 
@@ -99,24 +97,23 @@ def validate_service_account_info(info):
         print("Private key is missing")
         return False
     
-    # Verify key structure
-    key_lines = private_key.strip().split('\n')
-    if len(key_lines) < 3:
-        print("Private key has invalid structure - too few lines")
-        return False
-        
-    if not key_lines[0].strip() == "-----BEGIN PRIVATE KEY-----":
-        print("Private key missing proper header")
-        return False
-        
-    if not key_lines[-1].strip() == "-----END PRIVATE KEY-----":
-        print("Private key missing proper footer")
+    # Validate key structure
+    if not (private_key.startswith('-----BEGIN PRIVATE KEY-----\n') and 
+            private_key.endswith('\n-----END PRIVATE KEY-----\n')):
+        print("Private key is missing proper header/footer structure")
         return False
     
-    # Verify base64 content
-    content_lines = key_lines[1:-1]
+    # Count number of lines and validate format
+    lines = private_key.strip().split('\n')
+    if len(lines) < 3:
+        print(f"Private key is malformed - found {len(lines)} lines, expected > 3")
+        return False
+    
+    # Validate base64 content
+    content_lines = lines[1:-1]
     if not all(len(line.strip()) <= 64 for line in content_lines):
         print("Warning: Some content lines exceed 64 characters")
+        return False
     
     return True
 
@@ -128,17 +125,18 @@ def initialize_firebase():
         return _db, _storage_bucket
     
     try:
-        # Format the private key correctly for Vercel
+        # Format the private key correctly
         private_key = get_formatted_private_key()
         if not private_key:
             raise ValueError("Could not format private key")
             
-        print("Private key format check:")
-        print(f"Starts with header: {private_key.startswith('-----BEGIN PRIVATE KEY-----')}")
-        print(f"Ends with footer: {private_key.endswith('-----END PRIVATE KEY-----\n')}")
-        print(f"Contains newlines: {'\\n' in private_key}")
+        print("\nPrivate key validation:")
+        print(f"1. Starts with header: {private_key.startswith('-----BEGIN PRIVATE KEY-----')}")
+        print(f"2. Ends with footer and newline: {private_key.endswith('-----END PRIVATE KEY-----\n')}")
+        print(f"3. Contains proper line breaks: {private_key.count('\n') > 2}")
+        print(f"4. Key length: {len(private_key)} characters")
         
-        # Create service account info directly from environment variables
+        # Create service account info
         service_account_info = {
             "type": "service_account",
             "project_id": os.getenv('AUTH_PROJECT_ID'),
@@ -156,11 +154,10 @@ def initialize_firebase():
         if not validate_service_account_info(service_account_info):
             raise ValueError("Invalid service account configuration")
             
-        # Debug info (safely)
-        print(f"Project ID: {service_account_info['project_id']}")
+        print(f"\nProject ID: {service_account_info['project_id']}")
         print(f"Client Email: {service_account_info['client_email']}")
         
-        # Initialize Firebase with dictionary credentials (works on Vercel)
+        # Initialize Firebase
         _firebase_app = firebase_admin.initialize_app(
             credentials.Certificate(service_account_info),
             {
@@ -169,17 +166,15 @@ def initialize_firebase():
             }
         )
         
-        # Initialize Firestore and Storage
         _db = firestore.client()
         _storage_bucket = storage.bucket()
-        print("Firebase initialized successfully with environment variables!")
+        print("Firebase initialized successfully!")
         return _db, _storage_bucket
         
     except Exception as e:
         print(f"Firebase initialization error: {str(e)}")
         print("Attempting to use default application credentials...")
         try:
-            # Try using default credentials as fallback
             _firebase_app = firebase_admin.initialize_app()
             _db = firestore.client()
             _storage_bucket = storage.bucket()
