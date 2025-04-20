@@ -48,23 +48,19 @@ def get_formatted_private_key():
             base64_content = key
             
         # Clean up base64 content
-        base64_content = ''.join(base64_content.split())  # Remove all whitespace
+        base64_content = ''.join(c for c in base64_content if c.isalnum() or c in '+/=')
         
-        # Ensure we don't have duplicate content
-        if header in base64_content:
-            base64_content = base64_content[base64_content.index(header) + len(header):]
-        if footer in base64_content:
-            base64_content = base64_content[:base64_content.index(footer)]
-            
         # Format key with proper line breaks
-        formatted_lines = [header]
+        formatted_lines = []
+        formatted_lines.append(header)
         
         # Split base64 into 64-character chunks
-        for i in range(0, len(base64_content), 64):
-            chunk = base64_content[i:i+64]
-            if chunk:  # Only add non-empty chunks
-                formatted_lines.append(chunk)
-            
+        chunks = [base64_content[i:i+64] for i in range(0, len(base64_content), 64)]
+        
+        # Add each chunk as a line
+        formatted_lines.extend(chunks)
+        
+        # Add footer
         formatted_lines.append(footer)
         
         # Join with newlines, ensuring proper spacing
@@ -77,11 +73,22 @@ def get_formatted_private_key():
         print(f"Header present: {formatted_key.startswith(header)}")
         print(f"Footer present: {formatted_key.endswith(footer + '\n')}")
         print(f"Base64 content length: {len(base64_content)}")
+        print(f"Number of chunks: {len(chunks)}")
         print("Line lengths:")
         for i, line in enumerate(lines):
             if line and i > 0 and i < len(lines) - 1:  # Skip header/footer
                 print(f"Line {i}: {len(line)} characters")
+                if len(line) != 64 and i < len(lines) - 2:  # All lines except last should be 64 chars
+                    print(f"Warning: Line {i} is not 64 characters")
         
+        # Verify key format
+        if not formatted_key.startswith(header + '\n'):
+            print("Warning: Key does not start with proper header")
+            return None
+        if not formatted_key.endswith(footer + '\n'):
+            print("Warning: Key does not end with proper footer")
+            return None
+            
         return formatted_key
         
     except Exception as e:
