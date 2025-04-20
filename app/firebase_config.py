@@ -60,55 +60,52 @@ def get_formatted_private_key():
         print(f"Error formatting private key: {str(e)}")
         return None
 
-def validate_service_account_info(info):
-    """Validate the service account info before using it"""
-    required_fields = [
-        'type',
-        'project_id',
-        'private_key_id',
-        'private_key',
-        'client_email',
-        'client_id',
-        'auth_uri',
-        'token_uri',
-        'auth_provider_x509_cert_url',
-        'client_x509_cert_url'
-    ]
+def validate_service_account_info(info, for_auth=False):
+    """Validate service account credentials dictionary"""
+    # Basic required fields for any Firebase service
+    required_fields = ['type', 'project_id', 'private_key', 'client_email']
     
+    # Additional fields required only for auth
+    if for_auth:
+        required_fields.extend([
+            'private_key_id',
+            'client_id',
+            'auth_uri',
+            'token_uri',
+            'auth_provider_x509_cert_url',
+            'client_x509_cert_url'
+        ])
+    
+    # Check all required fields are present and non-empty
     missing = [field for field in required_fields if not info.get(field)]
     if missing:
         print(f"Missing required fields: {', '.join(missing)}")
         return False
-    
+            
     # Validate type
     if info['type'] != 'service_account':
         print("Invalid credential type - must be 'service_account'")
         return False
-    
+        
     # Validate private key format
     private_key = info.get('private_key', '')
     if not private_key:
         print("Private key is missing")
         return False
-    
+        
     # Split into lines and validate structure
     lines = private_key.strip().split('\n')
     if len(lines) < 3:
         print(f"Private key is malformed - found {len(lines)} lines, expected > 3")
         return False
-        
+            
     if not lines[0].strip() == "-----BEGIN PRIVATE KEY-----":
         print(f"Private key is missing proper header. Found: {lines[0]}")
         return False
-        
+            
     if not lines[-1].strip() == "-----END PRIVATE KEY-----":
         print(f"Private key is missing proper footer. Found: {lines[-1]}")
         return False
-    
-    # Validate base64 content
-    content_lines = lines[1:-1]
-    if not all(len(line.strip()) <= 64 for line in content_lines):
-        print("Warning: Some content lines exceed 64 characters")
     
     return True
 
@@ -139,7 +136,7 @@ def initialize_firebase():
         print(f"Client email present: {bool(client_email)}")
         print(f"Private key present and formatted: {bool(private_key)}")
         
-        # Create credentials dictionary
+        # Create minimal credentials dictionary for database access
         creds = {
             'type': 'service_account',
             'project_id': project_id,
@@ -147,8 +144,8 @@ def initialize_firebase():
             'client_email': client_email,
         }
         
-        # Validate credentials
-        if not validate_service_account_info(creds):
+        # Validate credentials (not for auth)
+        if not validate_service_account_info(creds, for_auth=False):
             print("Invalid service account credentials")
             return None
             
