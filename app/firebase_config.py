@@ -6,13 +6,11 @@ from firebase_admin import credentials, firestore, storage
 # Load environment variables
 load_dotenv()
 
-# Debug: Print environment variables
-print("Environment variables loaded")
-
-# Debug: Print Firebase config status
+# Debug: Print blog Firebase config status
 print("\nBlog Firebase Config Status:")
-print(f"projectId: {'Present' if os.getenv('FIREBASE_PROJECT_ID') else 'Missing'}")
-print(f"storageBucket: {'Present' if os.getenv('FIREBASE_STORAGE_BUCKET') else 'Missing'}")
+print(f"API Key: {'Present' if os.getenv('FIREBASE_API_KEY') else 'Missing'}")
+print(f"Project ID: {'Present' if os.getenv('FIREBASE_PROJECT_ID') else 'Missing'}")
+print(f"Storage Bucket: {'Present' if os.getenv('FIREBASE_STORAGE_BUCKET') else 'Missing'}")
 
 # Singleton pattern for blog Firebase app
 _blog_firebase_app = None
@@ -32,12 +30,17 @@ def initialize_firebase():
             pass
             
         # Initialize Firebase Admin SDK for blog operations
-        # Note: We don't need private key for client-side operations
-        _blog_firebase_app = firebase_admin.initialize_app({
+        config = {
+            'apiKey': os.getenv('FIREBASE_API_KEY'),
             'projectId': os.getenv('FIREBASE_PROJECT_ID'),
-            'storageBucket': os.getenv('FIREBASE_STORAGE_BUCKET')
-        }, name='blog')
+            'storageBucket': os.getenv('FIREBASE_STORAGE_BUCKET'),
+            'authDomain': os.getenv('FIREBASE_AUTH_DOMAIN'),
+            'messagingSenderId': os.getenv('FIREBASE_MESSAGING_SENDER_ID'),
+            'appId': os.getenv('FIREBASE_APP_ID'),
+            'measurementId': os.getenv('FIREBASE_MEASUREMENT_ID')
+        }
         
+        _blog_firebase_app = firebase_admin.initialize_app(config, name='blog')
         print("Blog Firebase initialized successfully")
         
         # Initialize Firestore and Storage
