@@ -115,7 +115,7 @@ def initialize_firebase_database():
         
         # Initialize Firebase app for database
         _db_firebase_app = firebase_admin.initialize_app(
-            credentials.ApplicationDefault(),
+            None,  # Use default credentials
             {
                 'projectId': config['projectId'],
                 'storageBucket': config['storageBucket']
