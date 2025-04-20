@@ -30,28 +30,16 @@ if not all([TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER]):
     raise ValueError("Twilio credentials must be set in environment variables")
 
 def get_formatted_private_key() -> str:
-    """Format the private key from environment variable"""
+    """Get the private key exactly as provided by Firebase"""
     private_key = os.getenv('AUTH_PRIVATE_KEY', '')
     
-    # Remove quotes
+    # Remove surrounding quotes if present
     private_key = private_key.strip('"\'')
     
-    # Extract the raw key content (remove header, footer, and all newlines/spaces)
-    content = private_key.replace('-----BEGIN PRIVATE KEY-----', '') \
-                        .replace('-----END PRIVATE KEY-----', '') \
-                        .replace('\\n', '') \
-                        .replace('\n', '') \
-                        .replace(' ', '')
+    # Replace escaped newlines with actual newlines
+    private_key = private_key.replace('\\n', '\n')
     
-    # Reconstruct the key in proper PEM format
-    lines = ['-----BEGIN PRIVATE KEY-----']
-    # Add base64 content in 64-character chunks
-    for i in range(0, len(content), 64):
-        lines.append(content[i:i + 64])
-    lines.append('-----END PRIVATE KEY-----')
-    
-    # Join with literal newlines
-    return '\n'.join(lines)
+    return private_key
 
 # Initialize Firebase Admin with auth-specific credentials
 def initialize_firebase_auth():
@@ -62,7 +50,7 @@ def initialize_firebase_auth():
     except ValueError:
         # App doesn't exist, create new one
         try:
-            # Get service account info
+            # Create service account info with minimal processing
             cred_dict = {
                 'type': 'service_account',
                 'project_id': os.getenv('AUTH_PROJECT_ID'),
@@ -75,12 +63,6 @@ def initialize_firebase_auth():
                 'auth_provider_x509_cert_url': 'https://www.googleapis.com/oauth2/v1/certs',
                 'client_x509_cert_url': os.getenv('AUTH_CLIENT_CERT_URL')
             }
-            
-            # Debug output for key format
-            print("\nPrivate Key Format Check:")
-            print(f"Key starts with correct header: {cred_dict['private_key'].startswith('-----BEGIN PRIVATE KEY-----')}")
-            print(f"Key ends with correct footer: {cred_dict['private_key'].endswith('-----END PRIVATE KEY-----')}")
-            print(f"Number of lines: {len(cred_dict['private_key'].splitlines())}")
             
             # Initialize app with credentials
             cred = credentials.Certificate(cred_dict)
