@@ -34,49 +34,31 @@ def get_formatted_private_key():
         # Strip any wrapping quotes and whitespace
         key = key.strip().strip('"\'')
         
-        # Check for header/footer
+        # Define header and footer
         header = "-----BEGIN PRIVATE KEY-----"
         footer = "-----END PRIVATE KEY-----"
         
-        # First, split by literal \n if present
-        if '\\n' in key:
-            parts = key.split('\\n')
+        # Extract base64 content
+        if header in key and footer in key:
+            # Get content between header and footer
+            start = key.index(header) + len(header)
+            end = key.index(footer)
+            base64_content = key[start:end].strip()
         else:
-            parts = key.split('\n')
-            
-        # Clean up parts
-        parts = [part.strip() for part in parts if part.strip()]
+            # If no header/footer, assume entire content is base64
+            base64_content = key.replace(header, '').replace(footer, '').strip()
         
-        # Debug parts
-        print("\nParts Debug:")
-        print(f"Number of parts: {len(parts)}")
-        if parts:
-            print(f"First part: {parts[0]}")
-            print(f"Last part: {parts[-1]}")
+        # Clean up base64 content - remove all whitespace
+        base64_content = ''.join(base64_content.split())
         
-        # If we don't have proper header/footer, try to reconstruct
-        if not (parts and parts[0] == header and parts[-1] == footer):
-            # Find the base64 content
-            base64_content = ''
-            for part in parts:
-                if header in part:
-                    base64_content = part[part.index(header) + len(header):].strip()
-                elif footer in part:
-                    base64_content = part[:part.index(footer)].strip()
-                elif not (part.startswith('-----') and part.endswith('-----')):
-                    base64_content += part.strip()
-            
-            # Clean up base64 content
-            base64_content = ''.join(base64_content.split())
-            
-            # Reconstruct parts
-            parts = [header]
-            # Split into 64-char chunks
-            for i in range(0, len(base64_content), 64):
-                parts.append(base64_content[i:i+64])
-            parts.append(footer)
+        # Format key properly
+        parts = [header]
+        # Split base64 into 64-character chunks
+        for i in range(0, len(base64_content), 64):
+            parts.append(base64_content[i:i+64])
+        parts.append(footer)
         
-        # Join with actual newlines and ensure final newline
+        # Join with newlines and ensure final newline
         formatted_key = '\n'.join(parts) + '\n'
         
         # Debug output
