@@ -32,32 +32,31 @@ def get_formatted_private_key():
         header = "-----BEGIN PRIVATE KEY-----"
         footer = "-----END PRIVATE KEY-----"
         
-        # Extract base64 content between header and footer if present
-        if header in key and footer in key:
-            start = key.index(header) + len(header)
-            end = key.index(footer)
-            base64_content = key[start:end].strip()
-        else:
-            # Key is just base64 content
-            base64_content = key.replace('\\n', '')
+        if header not in key or footer not in key:
+            print("Private key missing header or footer")
+            return None
             
-        # Clean the base64 content
-        base64_content = ''.join(base64_content.split())
+        # Split the key into parts
+        parts = key.split('\\n')
         
-        # Format key with proper line breaks
-        formatted_lines = [header]
-        # Split into 64 char chunks
-        chunk_size = 64
-        chunks = [base64_content[i:i+chunk_size] for i in range(0, len(base64_content), chunk_size)]
-        formatted_lines.extend(chunks)
-        formatted_lines.append(footer)
+        # Remove empty parts and strip whitespace
+        parts = [part.strip() for part in parts if part.strip()]
         
-        # Join with newlines and add final newline
-        formatted_key = '\n'.join(formatted_lines) + '\n'
+        # Ensure header and footer are separate lines
+        if header in parts[0]:
+            parts[0] = header
+        if footer in parts[-1]:
+            parts[-1] = footer
+            
+        # Join with actual newlines
+        formatted_key = '\n'.join(parts)
         
+        # Ensure final newline
+        if not formatted_key.endswith('\n'):
+            formatted_key += '\n'
+            
         # Debug output
-        print(f"Formatted key has {len(formatted_lines)} lines")
-        print(f"Base64 content length: {len(base64_content)}")
+        print(f"Formatted key has {len(parts)} lines")
         print(f"Header present: {header in formatted_key}")
         print(f"Footer present: {footer in formatted_key}")
         print(f"Sample structure:\n{formatted_key[:100]}...")

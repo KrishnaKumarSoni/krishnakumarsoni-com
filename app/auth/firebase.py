@@ -31,38 +31,57 @@ if not all([TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER]):
     raise ValueError("Twilio credentials must be set in environment variables")
 
 # Initialize Firebase Admin with auth-specific credentials
-try:
-    # Check if Firebase app is already initialized
-    app = firebase_admin.get_app('auth')
-except ValueError:
-    # Format the private key using our helper function
-    private_key = get_formatted_private_key()
-    if not private_key:
-        raise ValueError("Could not format private key for authentication")
-    
-    # Create credential object from environment variables
-    cred_dict = {
-        "type": "service_account",
-        "project_id": os.getenv('AUTH_PROJECT_ID'),
-        "private_key_id": os.getenv('AUTH_PRIVATE_KEY_ID'),
-        "private_key": private_key,  # Use our formatted key
-        "client_email": os.getenv('AUTH_CLIENT_EMAIL'),
-        "client_id": os.getenv('AUTH_CLIENT_ID'),
-        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-        "token_uri": "https://oauth2.googleapis.com/token",
-        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-        "client_x509_cert_url": os.getenv('AUTH_CLIENT_CERT_URL')
-    }
-    
+def initialize_firebase_auth():
+    """Initialize Firebase Admin SDK for authentication"""
     try:
-        cred = credentials.Certificate(cred_dict)
-        app = firebase_admin.initialize_app(cred, {
-            'projectId': os.getenv('AUTH_PROJECT_ID')
-        }, name='auth')  # Use 'auth' as the app name
-        print("Auth Firebase app initialized successfully!")
-    except ValueError as e:
-        print(f"Firebase initialization error: {str(e)}")
-        raise
+        # Try to get existing app first
+        return firebase_admin.get_app('auth')
+    except ValueError:
+        # App doesn't exist, create new one
+        try:
+            # Get formatted private key
+            private_key = get_formatted_private_key()
+            if not private_key:
+                raise ValueError("Failed to format private key")
+                
+            # Debug output for key format
+            print("\nPrivate Key Format Check:")
+            print(f"Key starts with correct header: {private_key.startswith('-----BEGIN PRIVATE KEY-----')}")
+            print(f"Key ends with correct footer: {private_key.endswith('-----END PRIVATE KEY-----\n')}")
+            print(f"Number of lines: {len(private_key.splitlines())}")
+
+            # Create credentials dictionary
+            cred_dict = {
+                'type': 'service_account',
+                'project_id': os.getenv('AUTH_PROJECT_ID'),
+                'private_key_id': os.getenv('AUTH_PRIVATE_KEY_ID'),
+                'private_key': private_key,
+                'client_email': os.getenv('AUTH_CLIENT_EMAIL'),
+                'client_id': os.getenv('AUTH_CLIENT_ID'),
+                'auth_uri': 'https://accounts.google.com/o/oauth2/auth',
+                'token_uri': 'https://oauth2.googleapis.com/token',
+                'auth_provider_x509_cert_url': 'https://www.googleapis.com/oauth2/v1/certs',
+                'client_x509_cert_url': os.getenv('AUTH_CLIENT_CERT_URL')
+            }
+            
+            # Validate required fields
+            required_fields = ['project_id', 'private_key', 'client_email']
+            missing_fields = [field for field in required_fields if not cred_dict.get(field)]
+            if missing_fields:
+                raise ValueError(f"Missing required fields: {', '.join(missing_fields)}")
+
+            # Initialize app with credentials
+            cred = credentials.Certificate(cred_dict)
+            return firebase_admin.initialize_app(cred, name='auth')
+            
+        except Exception as e:
+            print(f"\nFailed to initialize Firebase Auth: {str(e)}")
+            print("\nEnvironment variables status:")
+            for key in ['AUTH_PROJECT_ID', 'AUTH_PRIVATE_KEY_ID', 'AUTH_PRIVATE_KEY', 
+                       'AUTH_CLIENT_EMAIL', 'AUTH_CLIENT_ID', 'AUTH_CLIENT_CERT_URL']:
+                value = os.getenv(key)
+                print(f"{key}: {'Present' if value else 'Missing'}")
+            raise
 
 # Initialize Twilio client
 twilio_client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
