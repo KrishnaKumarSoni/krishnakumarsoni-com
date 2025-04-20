@@ -25,76 +25,109 @@ def get_formatted_private_key():
     # Remove any quotes and whitespace
     key = key.strip().strip('"').strip("'")
     
-    # Ensure the key has the correct header and footer
-    if not key.startswith('-----BEGIN PRIVATE KEY-----'):
-        print("Private key is missing proper header")
-        return None
-    if not key.endswith('-----END PRIVATE KEY-----'):
-        print("Private key is missing proper footer")
-        return None
+    # Split the key into parts
+    parts = []
+    current_part = []
     
-    # Replace literal \n with actual newlines if they exist
-    if '\\n' in key:
-        key = key.replace('\\n', '\n')
-        
-    # Ensure there's a newline after the header and before the footer
-    key = key.replace('-----BEGIN PRIVATE KEY-----', '-----BEGIN PRIVATE KEY-----\n')
-    key = key.replace('-----END PRIVATE KEY-----', '\n-----END PRIVATE KEY-----')
+    for line in key.split('\\n'):
+        line = line.strip()
+        if line:
+            if line.startswith('-----BEGIN'):
+                if current_part:
+                    parts.append(''.join(current_part))
+                current_part = [line]
+            elif line.startswith('-----END'):
+                current_part.append(line)
+                parts.append(''.join(current_part))
+                current_part = []
+            else:
+                current_part.append(line)
     
-    # Ensure the key content is on separate lines
-    parts = key.split('\n')
-    cleaned_parts = []
+    if current_part:
+        parts.append(''.join(current_part))
+    
+    # Reconstruct the key with proper formatting
+    formatted_key = []
     for part in parts:
-        if part and not part.startswith('-----') and not part.endswith('-----'):
-            # Clean up any remaining whitespace in key content
-            cleaned_parts.append(part.strip())
+        if part.startswith('-----BEGIN'):
+            formatted_key.append(part)
+            formatted_key.append('')  # Add empty line after header
+        elif part.startswith('-----END'):
+            formatted_key.append('')  # Add empty line before footer
+            formatted_key.append(part)
+            formatted_key.append('')  # Add final newline
         else:
-            cleaned_parts.append(part)
-            
-    # Rejoin with proper newlines
-    key = '\n'.join(p for p in cleaned_parts if p)
+            # Add the base64 parts with proper line breaks
+            while part:
+                formatted_key.append(part[:64])
+                part = part[64:]
     
-    # Ensure final newline
-    if not key.endswith('\n'):
-        key += '\n'
-        
-    return key
+    result = '\n'.join(formatted_key)
+    
+    # Debug output
+    print("\nFormatted key structure:")
+    print("1. Has header:", "-----BEGIN PRIVATE KEY-----" in result)
+    print("2. Has footer:", "-----END PRIVATE KEY-----" in result)
+    print("3. Number of lines:", len(result.split('\n')))
+    print("4. First few characters:", result[:50] + "...")
+    print("5. Key format sample:")
+    print("   - Start:", result.split('\n')[0])
+    print("   - Middle sample:", result.split('\n')[len(result.split('\n'))//2])
+    print("   - End:", result.split('\n')[-2])
+    
+    return result
 
 def validate_service_account_info(info):
     """Validate the service account info before using it"""
     required_fields = [
+        'type',
         'project_id',
+        'private_key_id',
         'private_key',
         'client_email',
         'client_id',
-        'private_key_id',
-        'type'  # Ensure type field is present
+        'auth_uri',
+        'token_uri',
+        'auth_provider_x509_cert_url',
+        'client_x509_cert_url'
     ]
     
     missing = [field for field in required_fields if not info.get(field)]
     if missing:
         print(f"Missing required fields: {', '.join(missing)}")
         return False
-        
+    
+    # Validate type
+    if info['type'] != 'service_account':
+        print("Invalid credential type - must be 'service_account'")
+        return False
+    
     # Validate private key format
     private_key = info.get('private_key', '')
     if not private_key:
         print("Private key is missing")
         return False
-        
-    if not private_key.startswith('-----BEGIN PRIVATE KEY-----'):
-        print("Private key missing proper header")
+    
+    key_lines = private_key.strip().split('\n')
+    if len(key_lines) < 3:
+        print("Private key is malformed - not enough lines")
         return False
         
-    if not private_key.endswith('-----END PRIVATE KEY-----\n'):
-        print("Private key missing proper footer")
+    if not key_lines[0].strip() == "-----BEGIN PRIVATE KEY-----":
+        print("Private key is missing proper header")
         return False
         
-    # Validate type
-    if info.get('type') != 'service_account':
-        print("Invalid credential type - must be 'service_account'")
+    if not key_lines[-2].strip() == "-----END PRIVATE KEY-----":
+        print("Private key is missing proper footer")
         return False
-        
+    
+    # Print key structure for debugging
+    print("\nKey validation check:")
+    print(f"1. Number of lines in key: {len(key_lines)}")
+    print(f"2. Header check: {key_lines[0]}")
+    print(f"3. Footer check: {key_lines[-2]}")
+    print(f"4. Has content between header/footer: {len(key_lines) > 2}")
+    
     return True
 
 def initialize_firebase():
