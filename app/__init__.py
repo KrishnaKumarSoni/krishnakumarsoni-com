@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 import xml.etree.ElementTree as ET
 import re
 from .firebase_config import db, storage_bucket
+import tempfile
 
 load_dotenv()
 
@@ -36,7 +37,7 @@ def create_app():
     _app.config.update(
         SECRET_KEY=os.getenv('APP_SECRET', 'dev-secret-key'),
         SESSION_TYPE='filesystem',  # Use filesystem to store session data
-        SESSION_FILE_DIR=os.path.join(os.path.dirname(_app.root_path), 'flask_session'),
+        SESSION_FILE_DIR=tempfile.gettempdir(),
         SESSION_COOKIE_SECURE=False,  # Set to True in production with HTTPS
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE='Lax',
@@ -57,15 +58,18 @@ def create_app():
     _app.register_blueprint(auth_bp)
     init_blog_routes(_app)
     
-    # Create required directories
-    for directory in [
-        os.path.join(_app.static_folder, 'uploads'),
-        os.path.join(_app.static_folder, 'images'),
-        os.path.join(os.path.dirname(_app.root_path), 'flask_session')
-    ]:
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-            
+    # Configure upload directory
+    if os.environ.get('VERCEL'):
+        # Use /tmp for uploads in Vercel environment
+        upload_folder = os.path.join(tempfile.gettempdir(), 'uploads')
+    else:
+        # Use static/uploads for local development
+        upload_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../static/uploads')
+    
+    # Create upload directory if it doesn't exist
+    os.makedirs(upload_folder, exist_ok=True)
+    _app.config['UPLOAD_FOLDER'] = upload_folder
+    
     # Register core routes
     register_core_routes(_app)
     

@@ -27,19 +27,24 @@ def get_formatted_private_key():
     
     # Extract the base64 content between header and footer
     if '-----BEGIN PRIVATE KEY-----' in key and '-----END PRIVATE KEY-----' in key:
-        content = key.replace('-----BEGIN PRIVATE KEY-----', '')
-        content = content.replace('-----END PRIVATE KEY-----', '')
-        content = content.replace('\\n', '').strip()
+        # First, clean up any existing formatting
+        key = key.replace('\\n', '\n').replace('\n', '')
+        key = key.replace('-----BEGIN PRIVATE KEY-----', '')
+        key = key.replace('-----END PRIVATE KEY-----', '')
+        key = key.strip()
         
-        # Format the key properly
-        lines = ['-----BEGIN PRIVATE KEY-----']
-        # Split the content into 64-character chunks
-        for i in range(0, len(content), 64):
-            lines.append(content[i:i+64])
+        # Format the key properly with exact line breaks
+        lines = []
+        lines.append('-----BEGIN PRIVATE KEY-----')
+        
+        # Add base64 content in 64-character chunks
+        for i in range(0, len(key), 64):
+            lines.append(key[i:i+64])
+            
         lines.append('-----END PRIVATE KEY-----')
         
-        # Join with proper newlines
-        formatted_key = '\n'.join(lines)
+        # Join with proper newlines and ensure final newline
+        formatted_key = '\n'.join(lines) + '\n'
         
         # Debug output
         print("\nKey formatting details:")
@@ -52,6 +57,7 @@ def get_formatted_private_key():
         print(f"   First line: {lines[0]}")
         print(f"   Second line: {lines[1][:10]}...")
         print(f"   Last line: {lines[-1]}")
+        print("4. Final newline present:", formatted_key.endswith('\n'))
         
         return formatted_key
     else:
