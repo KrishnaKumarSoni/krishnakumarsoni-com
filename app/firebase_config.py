@@ -15,17 +15,17 @@ _db_firebase_app = None
 _db = None
 _storage_bucket = None
 
-def get_formatted_private_key():
+def get_formatted_private_key(env_key):
     """Get and format the private key from environment variables"""
     try:
         # Get raw key from environment
-        key = os.getenv('AUTH_PRIVATE_KEY', '')
+        key = os.getenv(env_key, '')
         if not key:
-            print("No private key found in environment variables")
+            print(f"No private key found for {env_key}")
             return None
             
         # Debug raw key
-        print("\nRaw Key Debug:")
+        print(f"\nRaw Key Debug for {env_key}:")
         print(f"Raw key length: {len(key)}")
         print(f"Raw key starts with: {key[:50]}")
         print(f"Raw key contains \\n: {'\\n' in key}")
@@ -67,7 +67,7 @@ def get_formatted_private_key():
         formatted_key = '\n'.join(formatted_lines) + '\n'
         
         # Debug output
-        print("\nFormatted Key Debug:")
+        print(f"\nFormatted Key Debug for {env_key}:")
         lines = formatted_key.split('\n')
         print(f"Formatted key has {len(lines)} lines")
         print(f"Header present: {formatted_key.startswith(header)}")
@@ -81,14 +81,6 @@ def get_formatted_private_key():
                 if len(line) != 64 and i < len(lines) - 2:  # All lines except last should be 64 chars
                     print(f"Warning: Line {i} is not 64 characters")
         
-        # Verify key format
-        if not formatted_key.startswith(header + '\n'):
-            print("Warning: Key does not start with proper header")
-            return None
-        if not formatted_key.endswith(footer + '\n'):
-            print("Warning: Key does not end with proper footer")
-            return None
-            
         return formatted_key
         
     except Exception as e:
@@ -97,27 +89,20 @@ def get_formatted_private_key():
 
 def get_database_credentials():
     """Get credentials for database Firebase project"""
-    private_key = get_formatted_private_key()
+    private_key = get_formatted_private_key('FIREBASE_PRIVATE_KEY')  # Use storage Firebase key
     if not private_key:
-        print("Failed to get formatted private key")
+        print("Failed to get formatted private key for database")
         return None
-        
-    # Debug the key format
-    print("\nPrivate Key Debug:")
-    lines = private_key.split('\n')
-    print(f"Number of lines: {len(lines)}")
-    print(f"First line: {lines[0]}")
-    print(f"Last non-empty line: {[line for line in lines if line][-1]}")
         
     return {
         'type': 'service_account',
         'project_id': os.getenv('FIREBASE_PROJECT_ID'),
         'private_key': private_key,
-        'client_email': os.getenv('AUTH_CLIENT_EMAIL'),
+        'client_email': os.getenv('FIREBASE_CLIENT_EMAIL'),  # Use storage Firebase email
         'auth_uri': "https://accounts.google.com/o/oauth2/auth",
         'token_uri': "https://oauth2.googleapis.com/token",
         'auth_provider_x509_cert_url': "https://www.googleapis.com/oauth2/v1/certs",
-        'client_x509_cert_url': os.getenv('AUTH_CLIENT_CERT_URL')
+        'client_x509_cert_url': os.getenv('FIREBASE_CLIENT_CERT_URL')  # Use storage Firebase cert URL
     }
 
 def validate_database_credentials(creds):
@@ -127,7 +112,7 @@ def validate_database_credentials(creds):
         'project_id', 
         'private_key', 
         'client_email',
-        'token_uri'  # Required by Firebase Admin SDK
+        'token_uri'
     ]
     
     # Check required fields
