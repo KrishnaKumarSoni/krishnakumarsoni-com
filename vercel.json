@@ -2,7 +2,7 @@
     "version": 2,
     "builds": [
         {
-            "src": "app.py",
+            "src": "wsgi.py",
             "use": "@vercel/python"
         },
         {
@@ -17,7 +17,7 @@
         },
         {
             "source": "/(.*)",
-            "destination": "/app.py"
+            "destination": "/wsgi.py"
         }
     ],
     "env": {
