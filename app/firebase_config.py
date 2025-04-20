@@ -16,7 +16,7 @@ _db = None
 _storage_bucket = None
 
 def get_formatted_private_key():
-    """Get and format the private key from environment variables"""
+    """Get and format the private key from environment variables - for auth only"""
     try:
         # Get raw key from environment
         key = os.getenv('AUTH_PRIVATE_KEY', '')
@@ -81,127 +81,11 @@ def get_formatted_private_key():
                 if len(line) != 64 and i < len(lines) - 2:  # All lines except last should be 64 chars
                     print(f"Warning: Line {i} is not 64 characters")
         
-        # Verify key format
-        if not formatted_key.startswith(header + '\n'):
-            print("Warning: Key does not start with proper header")
-            return None
-        if not formatted_key.endswith(footer + '\n'):
-            print("Warning: Key does not end with proper footer")
-            return None
-            
         return formatted_key
         
     except Exception as e:
         print(f"Error formatting private key: {str(e)}")
         return None
-
-def get_database_private_key():
-    """Get and format the private key specifically for database Firebase"""
-    try:
-        # Get raw key from environment
-        key = os.getenv('FIREBASE_PRIVATE_KEY', '')
-        if not key:
-            print("No database private key found in environment variables")
-            return None
-            
-        # Debug raw key
-        print("\nDatabase Key Debug:")
-        print(f"Raw key length: {len(key)}")
-        print(f"Raw key starts with: {key[:50]}")
-        print(f"Raw key contains \\n: {'\\n' in key}")
-        print(f"Raw key contains quotes: {'"' in key}")
-            
-        # Strip any wrapping quotes and whitespace
-        key = key.strip().strip('"\'')
-        
-        # Define header and footer
-        header = "-----BEGIN PRIVATE KEY-----"
-        footer = "-----END PRIVATE KEY-----"
-        
-        # Extract base64 content
-        if header in key:
-            # Get content after header
-            content_start = key.index(header) + len(header)
-            content_end = key.index(footer) if footer in key else len(key)
-            base64_content = key[content_start:content_end]
-        else:
-            base64_content = key
-            
-        # Clean up base64 content
-        base64_content = ''.join(c for c in base64_content if c.isalnum() or c in '+/=')
-        
-        # Format key with proper line breaks
-        formatted_lines = []
-        formatted_lines.append(header)
-        
-        # Split base64 into 64-character chunks
-        chunks = [base64_content[i:i+64] for i in range(0, len(base64_content), 64)]
-        
-        # Add each chunk as a line
-        formatted_lines.extend(chunks)
-        
-        # Add footer
-        formatted_lines.append(footer)
-        
-        # Join with newlines, ensuring proper spacing
-        formatted_key = '\n'.join(formatted_lines) + '\n'
-        
-        # Debug output
-        print("\nFormatted Database Key Debug:")
-        lines = formatted_key.split('\n')
-        print(f"Formatted key has {len(lines)} lines")
-        print(f"Header present: {formatted_key.startswith(header)}")
-        print(f"Footer present: {formatted_key.endswith(footer + '\n')}")
-        print(f"Base64 content length: {len(base64_content)}")
-        print(f"Number of chunks: {len(chunks)}")
-        print("Line lengths:")
-        for i, line in enumerate(lines):
-            if line and i > 0 and i < len(lines) - 1:  # Skip header/footer
-                print(f"Line {i}: {len(line)} characters")
-                if len(line) != 64 and i < len(lines) - 2:  # All lines except last should be 64 chars
-                    print(f"Warning: Line {i} is not 64 characters")
-        
-        return formatted_key
-        
-    except Exception as e:
-        print(f"Error formatting database private key: {str(e)}")
-        return None
-
-def get_database_credentials():
-    """Get credentials for database Firebase project"""
-    private_key = get_database_private_key()
-    if not private_key:
-        print("Failed to get formatted database private key")
-        return None
-        
-    return {
-        'type': 'service_account',
-        'project_id': os.getenv('FIREBASE_PROJECT_ID'),
-        'private_key': private_key,
-        'client_email': os.getenv('FIREBASE_CLIENT_EMAIL'),
-        'auth_uri': "https://accounts.google.com/o/oauth2/auth",
-        'token_uri': "https://oauth2.googleapis.com/token",
-        'auth_provider_x509_cert_url': "https://www.googleapis.com/oauth2/v1/certs",
-        'client_x509_cert_url': os.getenv('FIREBASE_CLIENT_CERT_URL')
-    }
-
-def validate_database_credentials(creds):
-    """Validate the minimal required credentials for database"""
-    required = [
-        'type', 
-        'project_id', 
-        'private_key', 
-        'client_email',
-        'token_uri'  # Required by Firebase Admin SDK
-    ]
-    
-    # Check required fields
-    missing = [field for field in required if not creds.get(field)]
-    if missing:
-        print(f"Missing required database fields: {', '.join(missing)}")
-        return False
-        
-    return True
 
 def initialize_firebase_database():
     """Initialize Firebase for database operations"""
@@ -215,27 +99,29 @@ def initialize_firebase_database():
         except ValueError:
             pass  # App not initialized yet
             
-        # Get database credentials
-        creds = get_database_credentials()
-        if not creds:
-            print("Failed to get database credentials")
-            return None
-            
-        # Debug output
-        print("\nDatabase Firebase Credentials Status:")
-        print(f"Project ID: {creds.get('project_id')}")
-        print(f"Client Email: {creds.get('client_email')}")
-        print(f"Private Key present: {bool(creds.get('private_key'))}")
-        print(f"Token URI present: {bool(creds.get('token_uri'))}")
+        # Get database config
+        config = {
+            'apiKey': os.getenv('FIREBASE_API_KEY'),
+            'projectId': os.getenv('FIREBASE_PROJECT_ID'),
+            'storageBucket': os.getenv('FIREBASE_STORAGE_BUCKET'),
+            'appId': os.getenv('FIREBASE_APP_ID'),
+            'measurementId': os.getenv('FIREBASE_MEASUREMENT_ID')
+        }
         
-        # Validate credentials
-        if not validate_database_credentials(creds):
-            print("Invalid database credentials")
-            return None
-            
+        # Debug output
+        print("\nDatabase Firebase Config Status:")
+        for key, value in config.items():
+            print(f"{key}: {'Present' if value else 'Missing'}")
+        
         # Initialize Firebase app for database
-        cert = credentials.Certificate(creds)
-        _db_firebase_app = firebase_admin.initialize_app(cert, name='database')
+        _db_firebase_app = firebase_admin.initialize_app(
+            credentials.ApplicationDefault(),
+            {
+                'projectId': config['projectId'],
+                'storageBucket': config['storageBucket']
+            },
+            name='database'
+        )
         
         # Initialize services
         _db = firestore.client(app=_db_firebase_app)
