@@ -6,7 +6,10 @@ import re
 from flask import current_app
 
 def get_db():
-    return current_app.config['firebase_db']
+    db = current_app.config['firebase_db']
+    if db is None:
+        raise RuntimeError("Firebase database is not initialized. Please check your Firebase configuration.")
+    return db
 
 def get_storage():
     return current_app.config['firebase_storage']
@@ -61,15 +64,19 @@ def format_blog_data(blog_data, doc_id=None):
 
 def get_all_blogs():
     """Get all blogs from Firestore"""
-    blogs_ref = get_db().collection('blogs')
-    blogs = []
-    
-    for doc in blogs_ref.order_by('date', direction='DESCENDING').stream():
-        blog_data = doc.to_dict()
-        formatted_blog = format_blog_data(blog_data, doc.id)
-        blogs.append(formatted_blog)
-    
-    return blogs
+    try:
+        blogs_ref = get_db().collection('blogs')
+        blogs = []
+        
+        for doc in blogs_ref.order_by('date', direction='DESCENDING').stream():
+            blog_data = doc.to_dict()
+            formatted_blog = format_blog_data(blog_data, doc.id)
+            blogs.append(formatted_blog)
+        
+        return blogs
+    except RuntimeError as e:
+        print(f"Database error: {str(e)}")
+        return []  # Return empty list if database is not available
 
 def get_blog_by_slug(slug):
     """Get a specific blog by slug"""
