@@ -25,44 +25,48 @@ def get_formatted_private_key():
     # Remove any quotes and whitespace
     key = key.strip().strip('"').strip("'")
     
-    # Split the key into parts using \n literal
+    # Split the key into parts
     parts = key.split('\\n')
     
-    # Clean up parts and ensure proper structure
-    if len(parts) > 2 and parts[0] == "-----BEGIN PRIVATE KEY-----" and parts[-1] == "-----END PRIVATE KEY-----":
-        # Get the base64 content (everything between header and footer)
-        content = ''.join(parts[1:-1])
-        
-        # Format with proper line breaks
-        formatted_lines = []
-        formatted_lines.append("-----BEGIN PRIVATE KEY-----\n")  # Add newline after header
-        
-        # Split base64 content into 64-character chunks
-        for i in range(0, len(content), 64):
-            formatted_lines.append(content[i:i+64] + "\n")  # Add newline after each chunk
-            
-        formatted_lines.append("-----END PRIVATE KEY-----\n")  # Add newline after footer
-        
-        # Join without additional newlines since we added them explicitly
-        formatted_key = ''.join(formatted_lines)
-        
-        # Debug output
-        print("\nKey formatting details:")
-        print(f"1. Number of lines: {len(formatted_lines)}")
-        print("2. Line lengths:")
-        for i, line in enumerate(formatted_lines):
-            if i < 3 or i > len(formatted_lines) - 3:  # Show first and last few lines
-                print(f"   Line {i+1}: {len(line)} chars")
-        print("3. Sample structure:")
-        print(f"   First line: {formatted_lines[0].rstrip()}")
-        print(f"   Second line: {formatted_lines[1][:10]}...")
-        print(f"   Last line: {formatted_lines[-1].rstrip()}")
-        print("4. Contains explicit newlines:", "\\n" not in formatted_key and "\n" in formatted_key)
-        
-        return formatted_key
-    else:
-        print("Private key is missing header or footer")
+    # Remove any empty parts and extra whitespace
+    parts = [part.strip() for part in parts if part.strip()]
+    
+    if not parts:
+        print("Key appears to be empty after processing")
         return None
+    
+    # Verify we have the header and footer
+    if parts[0] != "-----BEGIN PRIVATE KEY-----" or parts[-1] != "-----END PRIVATE KEY-----":
+        print("Key is missing proper header or footer")
+        return None
+    
+    # Get the base64 content (everything between header and footer)
+    content = ''.join(parts[1:-1])
+    
+    # Format the key with proper line breaks
+    formatted_parts = []
+    formatted_parts.append("-----BEGIN PRIVATE KEY-----")
+    
+    # Split content into 64-character chunks
+    for i in range(0, len(content), 64):
+        formatted_parts.append(content[i:i+64])
+    
+    formatted_parts.append("-----END PRIVATE KEY-----")
+    
+    # Join with proper newlines
+    formatted_key = '\n'.join(formatted_parts)
+    
+    # Debug output
+    print("\nProcessed key details:")
+    print(f"1. Total parts: {len(formatted_parts)}")
+    print(f"2. Content length: {len(content)}")
+    print("3. Structure verification:")
+    print(f"   - Header present: {formatted_parts[0] == '-----BEGIN PRIVATE KEY-----'}")
+    print(f"   - Footer present: {formatted_parts[-1] == '-----END PRIVATE KEY-----'}")
+    print(f"   - Content lines: {len(formatted_parts) - 2}")  # Subtract header and footer
+    print(f"   - First content line length: {len(formatted_parts[1]) if len(formatted_parts) > 2 else 0}")
+    
+    return formatted_key
 
 def validate_service_account_info(info):
     """Validate the service account info before using it"""
