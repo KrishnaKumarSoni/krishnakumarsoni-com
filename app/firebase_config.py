@@ -25,46 +25,44 @@ def get_formatted_private_key():
     # Remove any quotes and whitespace
     key = key.strip().strip('"').strip("'")
     
-    # Split the key into parts and clean up
-    parts = key.split('\\n')
-    parts = [part.strip() for part in parts if part.strip()]
-    
-    if not parts:
-        print("Key appears to be empty after processing")
+    # Extract the base64 content between header and footer
+    if '-----BEGIN PRIVATE KEY-----' in key and '-----END PRIVATE KEY-----' in key:
+        # First, clean up any existing formatting
+        key = key.replace('\\n', '\n').replace('\n', '')
+        key = key.replace('-----BEGIN PRIVATE KEY-----', '')
+        key = key.replace('-----END PRIVATE KEY-----', '')
+        key = key.strip()
+        
+        # Format the key properly with exact line breaks
+        lines = []
+        lines.append('-----BEGIN PRIVATE KEY-----')
+        
+        # Add base64 content in 64-character chunks
+        for i in range(0, len(key), 64):
+            lines.append(key[i:i+64])
+            
+        lines.append('-----END PRIVATE KEY-----')
+        
+        # Join with proper newlines and ensure final newline
+        formatted_key = '\n'.join(lines) + '\n'
+        
+        # Debug output
+        print("\nKey formatting details:")
+        print(f"1. Number of lines: {len(lines)}")
+        print("2. Line lengths:")
+        for i, line in enumerate(lines):
+            if i < 3 or i > len(lines) - 3:  # Show first and last few lines
+                print(f"   Line {i+1}: {len(line)} chars")
+        print("3. Sample structure:")
+        print(f"   First line: {lines[0]}")
+        print(f"   Second line: {lines[1][:10]}...")
+        print(f"   Last line: {lines[-1]}")
+        print("4. Final newline present:", formatted_key.endswith('\n'))
+        
+        return formatted_key
+    else:
+        print("Private key is missing header or footer")
         return None
-    
-    # Verify we have the header and footer
-    if parts[0] != "-----BEGIN PRIVATE KEY-----" or parts[-1] != "-----END PRIVATE KEY-----":
-        print("Key is missing proper header or footer")
-        return None
-    
-    # Get the base64 content (everything between header and footer)
-    content = ''.join(parts[1:-1])
-    
-    # Format the key with proper line breaks
-    formatted_parts = []
-    formatted_parts.append("-----BEGIN PRIVATE KEY-----\n")  # Add newline after header
-    
-    # Split content into 64-character chunks
-    for i in range(0, len(content), 64):
-        formatted_parts.append(content[i:i+64] + '\n')  # Add newline after each chunk
-    
-    formatted_parts.append("-----END PRIVATE KEY-----\n")  # Add newline after footer
-    
-    # Join without additional newlines since we added them explicitly
-    formatted_key = ''.join(formatted_parts)
-    
-    # Debug output
-    print("\nProcessed key details:")
-    print(f"1. Total parts: {len(formatted_parts)}")
-    print(f"2. Content length: {len(content)}")
-    print("3. Structure verification:")
-    print(f"   - Header present: {formatted_key.startswith('-----BEGIN PRIVATE KEY-----\n')}")
-    print(f"   - Footer present: {formatted_key.endswith('-----END PRIVATE KEY-----\n')}")
-    print(f"   - Content lines: {len(formatted_parts) - 2}")  # Subtract header and footer
-    print(f"   - First content line length: {len(formatted_parts[1].strip()) if len(formatted_parts) > 2 else 0}")
-    
-    return formatted_key
 
 def validate_service_account_info(info):
     """Validate the service account info before using it"""
@@ -132,7 +130,7 @@ def initialize_firebase():
             raise ValueError("Could not format private key")
             
         print("Private key format check:")
-        print(f"Starts with header: {private_key.startswith('-----BEGIN PRIVATE KEY-----\n')}")
+        print(f"Starts with header: {private_key.startswith('-----BEGIN PRIVATE KEY-----')}")
         print(f"Ends with footer: {private_key.endswith('-----END PRIVATE KEY-----\n')}")
         print(f"Contains newlines: {'\\n' in private_key}")
         
