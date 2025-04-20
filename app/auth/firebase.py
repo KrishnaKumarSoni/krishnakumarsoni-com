@@ -11,6 +11,7 @@ import string
 from dotenv import load_dotenv
 from twilio.rest import Client
 from datetime import datetime, timedelta
+from ..firebase_config import get_formatted_private_key  # Import our key formatting function
 
 # Load environment variables from .env file
 load_dotenv()
@@ -32,14 +33,19 @@ if not all([TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER]):
 # Initialize Firebase Admin with auth-specific credentials
 try:
     # Check if Firebase app is already initialized
-    firebase_admin.get_app()
+    app = firebase_admin.get_app('auth')
 except ValueError:
+    # Format the private key using our helper function
+    private_key = get_formatted_private_key()
+    if not private_key:
+        raise ValueError("Could not format private key for authentication")
+    
     # Create credential object from environment variables
     cred_dict = {
         "type": "service_account",
         "project_id": os.getenv('AUTH_PROJECT_ID'),
         "private_key_id": os.getenv('AUTH_PRIVATE_KEY_ID'),
-        "private_key": os.getenv('AUTH_PRIVATE_KEY'),  # Now reading directly without replace
+        "private_key": private_key,  # Use our formatted key
         "client_email": os.getenv('AUTH_CLIENT_EMAIL'),
         "client_id": os.getenv('AUTH_CLIENT_ID'),
         "auth_uri": "https://accounts.google.com/o/oauth2/auth",
@@ -50,9 +56,10 @@ except ValueError:
     
     try:
         cred = credentials.Certificate(cred_dict)
-        firebase_admin.initialize_app(cred, {
+        app = firebase_admin.initialize_app(cred, {
             'projectId': os.getenv('AUTH_PROJECT_ID')
-        })
+        }, name='auth')  # Use 'auth' as the app name
+        print("Auth Firebase app initialized successfully!")
     except ValueError as e:
         print(f"Firebase initialization error: {str(e)}")
         raise
