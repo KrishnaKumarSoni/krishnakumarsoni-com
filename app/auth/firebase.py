@@ -33,33 +33,25 @@ def get_formatted_private_key() -> str:
     """Format the private key from environment variable"""
     private_key = os.getenv('AUTH_PRIVATE_KEY', '')
     
-    # Remove quotes and whitespace
-    private_key = private_key.strip().strip('"\'')
+    # Remove quotes
+    private_key = private_key.strip('"\'')
     
-    # Check if key already has proper format
-    if private_key.startswith('-----BEGIN PRIVATE KEY-----\n') and \
-       private_key.endswith('\n-----END PRIVATE KEY-----\n'):
-        return private_key
-    
-    # Remove any existing formatting
+    # Extract the raw key content (remove header, footer, and all newlines/spaces)
     content = private_key.replace('-----BEGIN PRIVATE KEY-----', '') \
                         .replace('-----END PRIVATE KEY-----', '') \
-                        .replace('\\n', '\n') \
+                        .replace('\\n', '') \
                         .replace('\n', '') \
-                        .strip()
+                        .replace(' ', '')
     
-    # Format key with proper line breaks
-    formatted_lines = ['-----BEGIN PRIVATE KEY-----']
+    # Reconstruct the key in proper PEM format
+    lines = ['-----BEGIN PRIVATE KEY-----']
+    # Add base64 content in 64-character chunks
+    for i in range(0, len(content), 64):
+        lines.append(content[i:i + 64])
+    lines.append('-----END PRIVATE KEY-----')
     
-    # Split content into 64-character chunks
-    chunk_size = 64
-    for i in range(0, len(content), chunk_size):
-        formatted_lines.append(content[i:i + chunk_size])
-    
-    formatted_lines.append('-----END PRIVATE KEY-----')
-    
-    # Join with newlines and add final newline
-    return '\n'.join(formatted_lines) + '\n'
+    # Join with literal newlines
+    return '\n'.join(lines)
 
 # Initialize Firebase Admin with auth-specific credentials
 def initialize_firebase_auth():
@@ -70,23 +62,12 @@ def initialize_firebase_auth():
     except ValueError:
         # App doesn't exist, create new one
         try:
-            # Get formatted private key
-            private_key = get_formatted_private_key()
-            if not private_key:
-                raise ValueError("Failed to format private key")
-                
-            # Debug output for key format
-            print("\nPrivate Key Format Check:")
-            print(f"Key starts with correct header: {private_key.startswith('-----BEGIN PRIVATE KEY-----')}")
-            print(f"Key ends with correct footer: {private_key.endswith('-----END PRIVATE KEY-----')}")
-            print(f"Number of lines: {len(private_key.splitlines())}")
-
-            # Create credentials dictionary
+            # Get service account info
             cred_dict = {
                 'type': 'service_account',
                 'project_id': os.getenv('AUTH_PROJECT_ID'),
                 'private_key_id': os.getenv('AUTH_PRIVATE_KEY_ID'),
-                'private_key': private_key,
+                'private_key': get_formatted_private_key(),
                 'client_email': os.getenv('AUTH_CLIENT_EMAIL'),
                 'client_id': os.getenv('AUTH_CLIENT_ID'),
                 'auth_uri': 'https://accounts.google.com/o/oauth2/auth',
@@ -95,12 +76,12 @@ def initialize_firebase_auth():
                 'client_x509_cert_url': os.getenv('AUTH_CLIENT_CERT_URL')
             }
             
-            # Validate required fields
-            required_fields = ['project_id', 'private_key', 'client_email']
-            missing_fields = [field for field in required_fields if not cred_dict.get(field)]
-            if missing_fields:
-                raise ValueError(f"Missing required fields: {', '.join(missing_fields)}")
-
+            # Debug output for key format
+            print("\nPrivate Key Format Check:")
+            print(f"Key starts with correct header: {cred_dict['private_key'].startswith('-----BEGIN PRIVATE KEY-----')}")
+            print(f"Key ends with correct footer: {cred_dict['private_key'].endswith('-----END PRIVATE KEY-----')}")
+            print(f"Number of lines: {len(cred_dict['private_key'].splitlines())}")
+            
             # Initialize app with credentials
             cred = credentials.Certificate(cred_dict)
             return firebase_admin.initialize_app(cred, name='auth')
