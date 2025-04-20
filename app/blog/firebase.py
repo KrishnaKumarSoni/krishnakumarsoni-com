@@ -4,20 +4,13 @@ from bs4 import BeautifulSoup
 import markdown
 import re
 from flask import current_app
+from slugify import slugify
 
 def get_db():
-    """Get Firebase database instance with error handling"""
     db = current_app.config.get('firebase_db')
-    if db is None:
-        from ..firebase_config import initialize_firebase
-        try:
-            db, _ = initialize_firebase()
-            if db is None:
-                raise Exception("Failed to initialize Firebase")
-            current_app.config['firebase_db'] = db
-        except Exception as e:
-            current_app.logger.error(f"Firebase database initialization error: {str(e)}")
-            raise Exception("Firebase database is not available") from e
+    if not db:
+        current_app.logger.error("Firebase database not available")
+        return None
     return db
 
 def get_storage():
@@ -72,98 +65,113 @@ def format_blog_data(blog_data, doc_id=None):
     return formatted_data
 
 def get_all_blogs():
-    """Get all blogs from Firestore"""
-    blogs_ref = get_db().collection('blogs')
-    blogs = []
-    
-    for doc in blogs_ref.order_by('date', direction='DESCENDING').stream():
-        blog_data = doc.to_dict()
-        formatted_blog = format_blog_data(blog_data, doc.id)
-        blogs.append(formatted_blog)
-    
-    return blogs
+    db = get_db()
+    if not db:
+        return None
+        
+    try:
+        blogs_ref = db.collection('blogs')
+        blogs = []
+        for doc in blogs_ref.stream():
+            blog_data = doc.to_dict()
+            blog_data['id'] = doc.id
+            blogs.append(blog_data)
+        return sorted(blogs, key=lambda x: x.get('date', ''), reverse=True)
+    except Exception as e:
+        current_app.logger.error(f"Error fetching blogs: {str(e)}")
+        return None
 
 def get_blog_by_slug(slug):
-    """Get a specific blog by slug"""
-    blogs_ref = get_db().collection('blogs')
-    query = blogs_ref.where('slug', '==', slug).limit(1).stream()
-    
-    for doc in query:
-        blog_data = doc.to_dict()
-        formatted_blog = format_blog_data(blog_data, doc.id)
+    db = get_db()
+    if not db:
+        return None
         
-        # Convert markdown content to HTML and extract TOC
-        html_content = markdown.markdown(formatted_blog['content'])
-        toc, html_content = extract_headings(html_content)
-        formatted_blog['content'] = html_content
-        formatted_blog['toc'] = toc
-        
-        return formatted_blog
-    
-    return None
+    try:
+        blogs_ref = db.collection('blogs')
+        query = blogs_ref.where('slug', '==', slug).limit(1)
+        docs = query.stream()
+        for doc in docs:
+            blog_data = doc.to_dict()
+            blog_data['id'] = doc.id
+            return blog_data
+        return None
+    except Exception as e:
+        current_app.logger.error(f"Error fetching blog by slug: {str(e)}")
+        return None
 
 def create_blog(title, content, category, thumbnail_url=None):
-    """Create a new blog in Firestore"""
-    # Create slug from title
-    slug = '-'.join(title.lower().split())
-    
-    # Convert content to HTML for excerpt
-    html_content = markdown.markdown(content)
-    soup = BeautifulSoup(html_content, 'html.parser')
-    excerpt = soup.p.text if soup.p else ""
-    
-    # Generate keywords
-    keywords = generate_keywords(title, excerpt, category)
-    
-    # Prepare blog data
-    now = datetime.now()
-    blog_data = {
-        'title': title,
-        'content': content,
-        'category': category,
-        'date': now,
-        'excerpt': excerpt,
-        'slug': slug,
-        'keywords': keywords,
-        'thumbnail': thumbnail_url
-    }
-    
-    # Save to Firestore
-    blogs_ref = get_db().collection('blogs')
-    doc_ref = blogs_ref.document()  # Auto-generate ID
-    doc_ref.set(blog_data)
-    
-    return doc_ref.id
+    db = get_db()
+    if not db:
+        raise Exception("Firebase database not available")
+        
+    try:
+        now = datetime.now()
+        date_str = now.strftime('%B %d, %Y')
+        date_iso = now.isoformat()
+        
+        # Create slug from title
+        slug = slugify(title)
+        
+        # Extract first 200 characters as excerpt
+        excerpt = content[:200] + '...' if len(content) > 200 else content
+        
+        # Extract keywords from content
+        keywords = [word.strip() for word in category.split(',')]
+        
+        blog_data = {
+            'title': title,
+            'content': content,
+            'category': category,
+            'slug': slug,
+            'date': date_str,
+            'date_iso': date_iso,
+            'excerpt': excerpt,
+            'keywords': keywords
+        }
+        
+        if thumbnail_url:
+            blog_data['thumbnail'] = thumbnail_url
+            
+        db.collection('blogs').add(blog_data)
+    except Exception as e:
+        current_app.logger.error(f"Error creating blog: {str(e)}")
+        raise
 
 def update_blog(blog_id, title, content, category, thumbnail_url=None):
-    """Update an existing blog in Firestore"""
-    # Get blog reference
-    blog_ref = get_db().collection('blogs').document(blog_id)
-    
-    # Convert content to HTML for excerpt
-    html_content = markdown.markdown(content)
-    soup = BeautifulSoup(html_content, 'html.parser')
-    excerpt = soup.p.text if soup.p else ""
-    
-    # Generate keywords
-    keywords = generate_keywords(title, excerpt, category)
-    
-    # Prepare update data
-    update_data = {
-        'title': title,
-        'content': content,
-        'category': category,
-        'excerpt': excerpt,
-        'keywords': keywords,
-    }
-    
-    if thumbnail_url:
-        update_data['thumbnail'] = thumbnail_url
-    
-    # Update in Firestore
-    blog_ref.update(update_data)
-    
+    db = get_db()
+    if not db:
+        raise Exception("Firebase database not available")
+        
+    try:
+        # Extract first 200 characters as excerpt
+        excerpt = content[:200] + '...' if len(content) > 200 else content
+        
+        # Extract keywords from content
+        keywords = [word.strip() for word in category.split(',')]
+        
+        blog_data = {
+            'title': title,
+            'content': content,
+            'category': category,
+            'excerpt': excerpt,
+            'keywords': keywords
+        }
+        
+        if thumbnail_url:
+            blog_data['thumbnail'] = thumbnail_url
+            
+        db.collection('blogs').document(blog_id).update(blog_data)
+    except Exception as e:
+        current_app.logger.error(f"Error updating blog: {str(e)}")
+        raise
+
 def delete_blog(blog_id):
-    """Delete a blog from Firestore"""
-    blog_ref = get_db().collection('blogs').document(blog_id)
-    blog_ref.delete() 
+    db = get_db()
+    if not db:
+        raise Exception("Firebase database not available")
+        
+    try:
+        db.collection('blogs').document(blog_id).delete()
+    except Exception as e:
+        current_app.logger.error(f"Error deleting blog: {str(e)}")
+        raise 
