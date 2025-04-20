@@ -10,8 +10,9 @@ load_dotenv()
 # Debug: Print environment variables
 print("Environment variables loaded")
 
-# Singleton pattern for Firebase
+# Singleton pattern for Firebase apps
 _firebase_app = None
+_auth_firebase_app = None
 _db = None
 _storage_bucket = None
 
@@ -35,6 +36,8 @@ def get_formatted_private_key():
     if len(parts) < 3:
         print("Private key appears malformed - not enough parts after splitting")
         print(f"Found {len(parts)} parts")
+        print("Raw key length:", len(key))
+        print("First few characters:", key[:50] + "...")
         return None
         
     # Reconstruct the key with proper line breaks
@@ -127,67 +130,72 @@ def validate_service_account_info(info):
     return True
 
 def initialize_firebase():
-    """Initialize Firebase Admin SDK with environment variables for Vercel compatibility"""
-    global _firebase_app, _db, _storage_bucket
+    """Initialize both Firebase Admin SDKs - one for storage/data and one for auth"""
+    global _firebase_app, _auth_firebase_app, _db, _storage_bucket
     
-    if _firebase_app:
+    if _firebase_app and _auth_firebase_app:
         return _db, _storage_bucket
     
     try:
-        # Format the private key correctly
-        private_key = get_formatted_private_key()
-        if not private_key:
-            raise ValueError("Could not format private key")
+        # Initialize main Firebase (for storage/data)
+        if not _firebase_app:
+            main_cred = credentials.Certificate({
+                "type": "service_account",
+                "project_id": os.getenv('FIREBASE_PROJECT_ID'),
+                "private_key": os.getenv('FIREBASE_PRIVATE_KEY', '').replace('\\n', '\n'),
+                "client_email": os.getenv('FIREBASE_CLIENT_EMAIL'),
+                "client_id": os.getenv('FIREBASE_CLIENT_ID'),
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+                "client_x509_cert_url": os.getenv('FIREBASE_CLIENT_CERT_URL')
+            })
             
-        print("\nPrivate key validation:")
-        print(f"1. Starts with header: {private_key.startswith('-----BEGIN PRIVATE KEY-----')}")
-        print(f"2. Ends with footer and newline: {private_key.endswith('-----END PRIVATE KEY-----\n')}")
-        print(f"3. Contains proper line breaks: {private_key.count('\n') > 2}")
-        print(f"4. Key length: {len(private_key)} characters")
-        
-        # Create service account info
-        service_account_info = {
-            "type": "service_account",
-            "project_id": os.getenv('AUTH_PROJECT_ID'),
-            "private_key_id": os.getenv('AUTH_PRIVATE_KEY_ID'),
-            "private_key": private_key,
-            "client_email": os.getenv('AUTH_CLIENT_EMAIL'),
-            "client_id": os.getenv('AUTH_CLIENT_ID'),
-            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-            "token_uri": "https://oauth2.googleapis.com/token",
-            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-            "client_x509_cert_url": os.getenv('AUTH_CLIENT_CERT_URL')
-        }
-        
-        # Validate service account info
-        if not validate_service_account_info(service_account_info):
-            raise ValueError("Invalid service account configuration")
-            
-        print(f"\nProject ID: {service_account_info['project_id']}")
-        print(f"Client Email: {service_account_info['client_email']}")
-        
-        # Initialize Firebase
-        _firebase_app = firebase_admin.initialize_app(
-            credentials.Certificate(service_account_info),
-            {
+            _firebase_app = firebase_admin.initialize_app(main_cred, {
                 'storageBucket': os.getenv('FIREBASE_STORAGE_BUCKET'),
                 'projectId': os.getenv('FIREBASE_PROJECT_ID')
-            }
-        )
+            }, name='main')
+            
+            print("Main Firebase app initialized successfully!")
+            
+            # Initialize Firestore and Storage
+            _db = firestore.client(app=_firebase_app)
+            _storage_bucket = storage.bucket(app=_firebase_app)
         
-        _db = firestore.client()
-        _storage_bucket = storage.bucket()
-        print("Firebase initialized successfully!")
+        # Initialize Auth Firebase
+        if not _auth_firebase_app:
+            # Format the auth private key
+            auth_private_key = get_formatted_private_key()
+            if not auth_private_key:
+                raise ValueError("Could not format auth private key")
+            
+            auth_cred = credentials.Certificate({
+                "type": "service_account",
+                "project_id": os.getenv('AUTH_PROJECT_ID'),
+                "private_key_id": os.getenv('AUTH_PRIVATE_KEY_ID'),
+                "private_key": auth_private_key,
+                "client_email": os.getenv('AUTH_CLIENT_EMAIL'),
+                "client_id": os.getenv('AUTH_CLIENT_ID'),
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+                "client_x509_cert_url": os.getenv('AUTH_CLIENT_CERT_URL')
+            })
+            
+            _auth_firebase_app = firebase_admin.initialize_app(auth_cred, name='auth')
+            print("Auth Firebase app initialized successfully!")
+        
         return _db, _storage_bucket
         
     except Exception as e:
         print(f"Firebase initialization error: {str(e)}")
         print("Attempting to use default application credentials...")
         try:
-            _firebase_app = firebase_admin.initialize_app()
-            _db = firestore.client()
-            _storage_bucket = storage.bucket()
-            print("Firebase initialized with default credentials!")
+            if not _firebase_app:
+                _firebase_app = firebase_admin.initialize_app(name='default')
+                _db = firestore.client()
+                _storage_bucket = storage.bucket()
+                print("Firebase initialized with default credentials!")
             return _db, _storage_bucket
         except Exception as fallback_error:
             print(f"Fallback initialization failed: {str(fallback_error)}")
