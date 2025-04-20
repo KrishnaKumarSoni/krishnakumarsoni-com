@@ -17,189 +17,133 @@ _db = None
 _storage_bucket = None
 
 def get_formatted_private_key():
-    """Format the private key correctly for both Vercel and local environments"""
-    key = os.getenv('AUTH_PRIVATE_KEY')
-    if not key:
-        print("No private key found in environment variables")
-        return None
+    """Get and format the private key from environment variables"""
+    try:
+        # Get raw key from environment
+        key = os.getenv('AUTH_PRIVATE_KEY', '')
+        if not key:
+            print("No private key found in environment variables")
+            return None
+            
+        # Strip any wrapping quotes and whitespace
+        key = key.strip().strip('"\'')
         
-    # Remove any quotes and whitespace
-    key = key.strip().strip('"').strip("'")
-    
-    # Handle escaped newlines by first converting them to actual newlines
-    key = key.replace('\\n', '\n')
-    
-    # Now split on actual newlines
-    parts = key.split('\n')
-    parts = [p for p in parts if p.strip()]  # Remove empty lines
-    
-    if len(parts) < 3:
-        print("Private key appears malformed - not enough parts after splitting")
-        print(f"Found {len(parts)} parts")
-        print("Raw key length:", len(key))
-        print("First few characters:", key[:50] + "...")
-        return None
+        # Check for header/footer
+        header = "-----BEGIN PRIVATE KEY-----"
+        footer = "-----END PRIVATE KEY-----"
         
-    # Reconstruct the key with proper line breaks
-    formatted_parts = []
-    for part in parts:
-        part = part.strip()
-        if part:  # Only add non-empty parts
-            if part == "-----BEGIN PRIVATE KEY-----" or part == "-----END PRIVATE KEY-----":
-                formatted_parts.append(part)
-            else:
-                # Add base64 content in chunks
-                while part:
-                    chunk = part[:64]
-                    if chunk:  # Only add non-empty chunks
-                        formatted_parts.append(chunk)
-                    part = part[64:]
-    
-    # Join with proper newlines and ensure final newline
-    formatted_key = '\n'.join(formatted_parts) + '\n'
-    
-    # Debug output
-    print("\nKey formatting details:")
-    print(f"1. Number of lines: {len(formatted_parts)}")
-    print("2. Line lengths:")
-    for i, line in enumerate(formatted_parts):
-        if i < 3 or i > len(formatted_parts) - 3:  # Show first and last few lines
-            print(f"   Line {i+1}: {len(line)} chars")
-    print("3. Sample structure:")
-    print(f"   First line: {formatted_parts[0]}")
-    print(f"   Second line: {formatted_parts[1][:10]}...")
-    print(f"   Last line: {formatted_parts[-1]}")
-    print("4. Final newline present:", formatted_key.endswith('\n'))
-    print("5. Raw key structure:")
-    print(f"   Header present: {'-----BEGIN PRIVATE KEY-----' in formatted_key}")
-    print(f"   Footer present: {'-----END PRIVATE KEY-----' in formatted_key}")
-    print(f"   Number of line breaks: {formatted_key.count('\n')}")
-    print(f"   Total key length: {len(formatted_key)}")
-    
-    return formatted_key
+        # Extract base64 content between header and footer if present
+        if header in key and footer in key:
+            start = key.index(header) + len(header)
+            end = key.index(footer)
+            base64_content = key[start:end].strip()
+        else:
+            # Key is just base64 content
+            base64_content = key.replace('\\n', '')
+            
+        # Clean the base64 content
+        base64_content = ''.join(base64_content.split())
+        
+        # Format key with proper line breaks
+        formatted_lines = [header]
+        # Split into 64 char chunks
+        chunk_size = 64
+        chunks = [base64_content[i:i+chunk_size] for i in range(0, len(base64_content), chunk_size)]
+        formatted_lines.extend(chunks)
+        formatted_lines.append(footer)
+        
+        # Join with newlines and add final newline
+        formatted_key = '\n'.join(formatted_lines) + '\n'
+        
+        # Debug output
+        print(f"Formatted key has {len(formatted_lines)} lines")
+        print(f"Base64 content length: {len(base64_content)}")
+        print(f"Header present: {header in formatted_key}")
+        print(f"Footer present: {footer in formatted_key}")
+        print(f"Sample structure:\n{formatted_key[:100]}...")
+        
+        return formatted_key
+        
+    except Exception as e:
+        print(f"Error formatting private key: {str(e)}")
+        return None
 
 def validate_service_account_info(info):
-    """Validate the service account info before using it"""
-    required_fields = [
-        'type',
-        'project_id',
-        'private_key_id',
-        'private_key',
-        'client_email',
-        'client_id',
-        'auth_uri',
-        'token_uri',
-        'auth_provider_x509_cert_url',
-        'client_x509_cert_url'
-    ]
+    """Validate service account credentials dictionary"""
+    required_fields = ['type', 'project_id', 'private_key', 'client_email']
     
-    missing = [field for field in required_fields if not info.get(field)]
-    if missing:
-        print(f"Missing required fields: {', '.join(missing)}")
-        return False
-    
-    # Validate type
-    if info['type'] != 'service_account':
-        print("Invalid credential type - must be 'service_account'")
-        return False
-    
+    # Check all required fields are present and non-empty
+    for field in required_fields:
+        if not info.get(field):
+            print(f"Missing required field: {field}")
+            return False
+            
     # Validate private key format
-    private_key = info.get('private_key', '')
-    if not private_key:
-        print("Private key is missing")
+    private_key = info['private_key']
+    if not private_key.startswith('-----BEGIN PRIVATE KEY-----'):
+        print("Private key missing header")
         return False
-    
-    # Validate key structure
-    if not (private_key.startswith('-----BEGIN PRIVATE KEY-----\n') and 
-            private_key.endswith('\n-----END PRIVATE KEY-----\n')):
-        print("Private key is missing proper header/footer structure")
+    if not private_key.endswith('-----END PRIVATE KEY-----\n'):
+        print("Private key missing footer or final newline")
         return False
-    
-    # Count number of lines and validate format
-    lines = private_key.strip().split('\n')
-    if len(lines) < 3:
-        print(f"Private key is malformed - found {len(lines)} lines, expected > 3")
-        return False
-    
-    # Validate base64 content
-    content_lines = lines[1:-1]
-    if not all(len(line.strip()) <= 64 for line in content_lines):
-        print("Warning: Some content lines exceed 64 characters")
-        return False
+        
+    # Count number of lines in private key
+    key_lines = private_key.strip().split('\n')
+    print(f"Private key has {len(key_lines)} lines")
     
     return True
 
 def initialize_firebase():
-    """Initialize both Firebase Admin SDKs - one for storage/data and one for auth"""
-    global _firebase_app, _auth_firebase_app, _db, _storage_bucket
-    
-    if _firebase_app and _auth_firebase_app:
-        return _db, _storage_bucket
-    
+    """Initialize Firebase with service account credentials"""
     try:
-        # Initialize main Firebase (for storage/data)
-        if not _firebase_app:
-            main_cred = credentials.Certificate({
-                "type": "service_account",
-                "project_id": os.getenv('FIREBASE_PROJECT_ID'),
-                "private_key": os.getenv('FIREBASE_PRIVATE_KEY', '').replace('\\n', '\n'),
-                "client_email": os.getenv('FIREBASE_CLIENT_EMAIL'),
-                "client_id": os.getenv('FIREBASE_CLIENT_ID'),
-                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                "token_uri": "https://oauth2.googleapis.com/token",
-                "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-                "client_x509_cert_url": os.getenv('FIREBASE_CLIENT_CERT_URL')
-            })
+        # Check if already initialized
+        try:
+            return firebase_admin.get_app()
+        except ValueError:
+            pass  # App not initialized yet
             
-            _firebase_app = firebase_admin.initialize_app(main_cred, {
-                'storageBucket': os.getenv('FIREBASE_STORAGE_BUCKET'),
-                'projectId': os.getenv('FIREBASE_PROJECT_ID')
-            }, name='main')
+        # Get and validate private key
+        private_key = get_formatted_private_key()
+        if not private_key:
+            print("Failed to get formatted private key")
+            return None
             
-            print("Main Firebase app initialized successfully!")
-            
-            # Initialize Firestore and Storage
-            _db = firestore.client(app=_firebase_app)
-            _storage_bucket = storage.bucket(app=_firebase_app)
+        # Get other required credentials
+        project_id = os.getenv('AUTH_PROJECT_ID')
+        client_email = os.getenv('AUTH_CLIENT_EMAIL')
         
-        # Initialize Auth Firebase
-        if not _auth_firebase_app:
-            # Format the auth private key
-            auth_private_key = get_formatted_private_key()
-            if not auth_private_key:
-                raise ValueError("Could not format auth private key")
-            
-            auth_cred = credentials.Certificate({
-                "type": "service_account",
-                "project_id": os.getenv('AUTH_PROJECT_ID'),
-                "private_key_id": os.getenv('AUTH_PRIVATE_KEY_ID'),
-                "private_key": auth_private_key,
-                "client_email": os.getenv('AUTH_CLIENT_EMAIL'),
-                "client_id": os.getenv('AUTH_CLIENT_ID'),
-                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                "token_uri": "https://oauth2.googleapis.com/token",
-                "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-                "client_x509_cert_url": os.getenv('AUTH_CLIENT_CERT_URL')
-            })
-            
-            _auth_firebase_app = firebase_admin.initialize_app(auth_cred, name='auth')
-            print("Auth Firebase app initialized successfully!")
+        # Debug output for credentials
+        print("\nFirebase Credentials Status:")
+        print(f"Project ID present: {bool(project_id)}")
+        print(f"Client email present: {bool(client_email)}")
+        print(f"Private key present and formatted: {bool(private_key)}")
         
-        return _db, _storage_bucket
+        # Create credentials dictionary
+        creds = {
+            'type': 'service_account',
+            'project_id': project_id,
+            'private_key': private_key,
+            'client_email': client_email,
+        }
+        
+        # Validate credentials
+        if not validate_service_account_info(creds):
+            print("Invalid service account credentials")
+            return None
+            
+        # Initialize Firebase
+        cred = credentials.Certificate(creds)
+        app = firebase_admin.initialize_app(cred)
+        print("Firebase initialized successfully")
+        return app
         
     except Exception as e:
-        print(f"Firebase initialization error: {str(e)}")
-        print("Attempting to use default application credentials...")
-        try:
-            if not _firebase_app:
-                _firebase_app = firebase_admin.initialize_app(name='default')
-                _db = firestore.client()
-                _storage_bucket = storage.bucket()
-                print("Firebase initialized with default credentials!")
-            return _db, _storage_bucket
-        except Exception as fallback_error:
-            print(f"Fallback initialization failed: {str(fallback_error)}")
-            return None, None
+        print(f"Error initializing Firebase: {str(e)}")
+        print("\nEnvironment variables status:")
+        for key in ['AUTH_PROJECT_ID', 'AUTH_CLIENT_EMAIL', 'AUTH_PRIVATE_KEY']:
+            value = os.getenv(key)
+            print(f"{key}: {'Present' if value else 'Missing'}")
+        return None
 
 # Try to initialize Firebase services
 try:
