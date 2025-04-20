@@ -24,6 +24,13 @@ def get_formatted_private_key():
             print("No private key found in environment variables")
             return None
             
+        # Debug raw key
+        print("\nRaw Key Debug:")
+        print(f"Raw key length: {len(key)}")
+        print(f"Raw key starts with: {key[:50]}")
+        print(f"Raw key contains \\n: {'\\n' in key}")
+        print(f"Raw key contains quotes: {'"' in key}")
+            
         # Strip any wrapping quotes and whitespace
         key = key.strip().strip('"\'')
         
@@ -31,34 +38,55 @@ def get_formatted_private_key():
         header = "-----BEGIN PRIVATE KEY-----"
         footer = "-----END PRIVATE KEY-----"
         
-        # Extract base64 content
-        if header in key and footer in key:
-            # Key already has header/footer, just clean up
+        # First, split by literal \n if present
+        if '\\n' in key:
             parts = key.split('\\n')
-            parts = [part.strip() for part in parts if part.strip()]
         else:
-            # Key is just base64, need to add header/footer
-            base64_content = key.replace('\\n', '')
+            parts = key.split('\n')
+            
+        # Clean up parts
+        parts = [part.strip() for part in parts if part.strip()]
+        
+        # Debug parts
+        print("\nParts Debug:")
+        print(f"Number of parts: {len(parts)}")
+        if parts:
+            print(f"First part: {parts[0]}")
+            print(f"Last part: {parts[-1]}")
+        
+        # If we don't have proper header/footer, try to reconstruct
+        if not (parts and parts[0] == header and parts[-1] == footer):
+            # Find the base64 content
+            base64_content = ''
+            for part in parts:
+                if header in part:
+                    base64_content = part[part.index(header) + len(header):].strip()
+                elif footer in part:
+                    base64_content = part[:part.index(footer)].strip()
+                elif not (part.startswith('-----') and part.endswith('-----')):
+                    base64_content += part.strip()
+            
+            # Clean up base64 content
+            base64_content = ''.join(base64_content.split())
+            
+            # Reconstruct parts
             parts = [header]
             # Split into 64-char chunks
             for i in range(0, len(base64_content), 64):
                 parts.append(base64_content[i:i+64])
             parts.append(footer)
-            
-        # Ensure header and footer are correct
-        if parts[0] != header:
-            parts[0] = header
-        if parts[-1] != footer:
-            parts[-1] = footer
-            
+        
         # Join with actual newlines and ensure final newline
         formatted_key = '\n'.join(parts) + '\n'
         
         # Debug output
+        print("\nFormatted Key Debug:")
         print(f"Formatted key has {len(parts)} lines")
         print(f"Header present: {formatted_key.startswith(header)}")
-        print(f"Footer present: {formatted_key.endswith(footer + '\\n')}")
-        print(f"Sample structure:\n{formatted_key[:100]}...")
+        print(f"Footer present: {formatted_key.endswith(footer + '\n')}")
+        print(f"First line: {parts[0]}")
+        print(f"Middle sample: {parts[1] if len(parts) > 2 else 'N/A'}")
+        print(f"Last line: {parts[-1]}")
         
         return formatted_key
         
