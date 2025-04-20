@@ -14,7 +14,6 @@ def init_blog_routes(app):
         try:
             # Get all blogs from Firebase
             blogs = get_all_blogs()
-            
             return render_template('pages/blogs.html', 
                                 blogs=blogs,
                                 meta_title="Blog | Krishna Kumar Soni",
@@ -22,14 +21,15 @@ def init_blog_routes(app):
                                 meta_keywords="blogs, articles, product development, product management, tech insights",
                                 is_local=request.host.startswith('127.0.0.1') or request.host.startswith('localhost'))
         except Exception as e:
-            print(f"Error fetching blogs: {str(e)}")
-            # Return template with empty blogs list
+            app.logger.error(f"Error fetching blogs: {str(e)}")
+            # Return an empty blogs list instead of failing
             return render_template('pages/blogs.html',
                                 blogs=[],
                                 meta_title="Blog | Krishna Kumar Soni",
                                 meta_description="Read articles on product development, management, and technical solutions by Krishna Kumar Soni.",
                                 meta_keywords="blogs, articles, product development, product management, tech insights",
-                                is_local=request.host.startswith('127.0.0.1') or request.host.startswith('localhost'))
+                                is_local=request.host.startswith('127.0.0.1') or request.host.startswith('localhost'),
+                                error_message="Unable to load blogs at this time. Please try again later.")
 
     def blog(slug):
         # Get blog from Firebase
