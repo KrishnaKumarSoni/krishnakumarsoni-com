@@ -30,17 +30,13 @@ def initialize_firebase():
             pass
             
         # Initialize Firebase Admin SDK for blog operations
-        config = {
-            'apiKey': os.getenv('FIREBASE_API_KEY'),
+        # For blog, we only need basic config without private key
+        cred = credentials.ApplicationDefault()
+        _blog_firebase_app = firebase_admin.initialize_app(cred, {
             'projectId': os.getenv('FIREBASE_PROJECT_ID'),
-            'storageBucket': os.getenv('FIREBASE_STORAGE_BUCKET'),
-            'authDomain': os.getenv('FIREBASE_AUTH_DOMAIN'),
-            'messagingSenderId': os.getenv('FIREBASE_MESSAGING_SENDER_ID'),
-            'appId': os.getenv('FIREBASE_APP_ID'),
-            'measurementId': os.getenv('FIREBASE_MEASUREMENT_ID')
-        }
+            'storageBucket': os.getenv('FIREBASE_STORAGE_BUCKET')
+        }, name='blog')
         
-        _blog_firebase_app = firebase_admin.initialize_app(config, name='blog')
         print("Blog Firebase initialized successfully")
         
         # Initialize Firestore and Storage

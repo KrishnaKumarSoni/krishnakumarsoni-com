@@ -11,7 +11,6 @@ import string
 from dotenv import load_dotenv
 from twilio.rest import Client
 from datetime import datetime, timedelta
-from ..firebase_config import get_formatted_private_key  # Import our key formatting function
 
 # Load environment variables from .env file
 load_dotenv()
@@ -30,6 +29,38 @@ if not AUTH_API_KEY or not AUTH_PROJECT_ID:
 if not all([TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER]):
     raise ValueError("Twilio credentials must be set in environment variables")
 
+def get_formatted_private_key() -> str:
+    """Format the private key from environment variable"""
+    private_key = os.getenv('AUTH_PRIVATE_KEY', '')
+    
+    # Remove quotes and whitespace
+    private_key = private_key.strip().strip('"\'')
+    
+    # Check if key already has proper format
+    if private_key.startswith('-----BEGIN PRIVATE KEY-----\n') and \
+       private_key.endswith('\n-----END PRIVATE KEY-----\n'):
+        return private_key
+    
+    # Remove any existing formatting
+    content = private_key.replace('-----BEGIN PRIVATE KEY-----', '') \
+                        .replace('-----END PRIVATE KEY-----', '') \
+                        .replace('\\n', '\n') \
+                        .replace('\n', '') \
+                        .strip()
+    
+    # Format key with proper line breaks
+    formatted_lines = ['-----BEGIN PRIVATE KEY-----']
+    
+    # Split content into 64-character chunks
+    chunk_size = 64
+    for i in range(0, len(content), chunk_size):
+        formatted_lines.append(content[i:i + chunk_size])
+    
+    formatted_lines.append('-----END PRIVATE KEY-----')
+    
+    # Join with newlines and add final newline
+    return '\n'.join(formatted_lines) + '\n'
+
 # Initialize Firebase Admin with auth-specific credentials
 def initialize_firebase_auth():
     """Initialize Firebase Admin SDK for authentication"""
@@ -47,7 +78,7 @@ def initialize_firebase_auth():
             # Debug output for key format
             print("\nPrivate Key Format Check:")
             print(f"Key starts with correct header: {private_key.startswith('-----BEGIN PRIVATE KEY-----')}")
-            print(f"Key ends with correct footer: {private_key.endswith('-----END PRIVATE KEY-----\n')}")
+            print(f"Key ends with correct footer: {private_key.endswith('-----END PRIVATE KEY-----')}")
             print(f"Number of lines: {len(private_key.splitlines())}")
 
             # Create credentials dictionary
@@ -85,6 +116,13 @@ def initialize_firebase_auth():
 
 # Initialize Twilio client
 twilio_client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+
+# Initialize Firebase Auth
+try:
+    auth_app = initialize_firebase_auth()
+except Exception as e:
+    print(f"Warning: Firebase Auth initialization failed: {str(e)}")
+    auth_app = None
 
 FIREBASE_AUTH_BASE_URL = "https://identitytoolkit.googleapis.com/v1/accounts"
 
