@@ -10,188 +10,86 @@ load_dotenv()
 # Debug: Print environment variables
 print("Environment variables loaded")
 
-# Singleton pattern for Firebase
-_firebase_app = None
+# Singleton pattern for Firebase apps
+_db_firebase_app = None
 _db = None
 _storage_bucket = None
 
-def get_formatted_private_key():
-    """Get and format the private key from environment variables"""
-    try:
-        # Get raw key from environment
-        key = os.getenv('AUTH_PRIVATE_KEY', '')
-        if not key:
-            print("No private key found in environment variables")
-            return None
-            
-        # Strip any wrapping quotes and whitespace
-        key = key.strip().strip('"\'')
-        
-        # Check for header/footer
-        header = "-----BEGIN PRIVATE KEY-----"
-        footer = "-----END PRIVATE KEY-----"
-        
-        if header not in key or footer not in key:
-            print("Private key missing header or footer")
-            return None
-            
-        # Convert literal \n to actual newlines
-        key = key.replace('\\n', '\n')
-        
-        # Split into lines and clean
-        lines = [line.strip() for line in key.split('\n') if line.strip()]
-        
-        # Validate structure
-        if not lines[0] == header:
-            print("First line is not header")
-            return None
-            
-        if not lines[-1] == footer:
-            print("Last line is not footer")
-            return None
-            
-        # Debug output
-        print(f"Formatted key has {len(lines)} lines")
-        print(f"Header present: {lines[0] == header}")
-        print(f"Footer present: {lines[-1] == footer}")
-        print(f"Sample structure:\n{lines[0]}\n[...key content...]\n{lines[-1]}")
-        
-        # Join with actual newlines and ensure final newline
-        return '\n'.join(lines) + '\n'
-        
-    except Exception as e:
-        print(f"Error formatting private key: {str(e)}")
-        return None
+def get_database_credentials():
+    """Get credentials for database Firebase project"""
+    return {
+        'type': 'service_account',
+        'project_id': os.getenv('FIREBASE_PROJECT_ID'),
+        'private_key': os.getenv('AUTH_PRIVATE_KEY'),  # Reusing auth key for now
+        'client_email': os.getenv('AUTH_CLIENT_EMAIL'),  # Reusing auth email for now
+    }
 
-def validate_service_account_info(info, for_auth=False):
-    """Validate service account credentials dictionary"""
-    # Basic required fields for any Firebase service
-    required_fields = ['type', 'project_id', 'private_key', 'client_email']
+def validate_database_credentials(creds):
+    """Validate the minimal required credentials for database"""
+    required = ['type', 'project_id', 'private_key', 'client_email']
     
-    # Additional fields required only for auth
-    if for_auth:
-        required_fields.extend([
-            'private_key_id',
-            'client_id',
-            'auth_uri',
-            'token_uri',
-            'auth_provider_x509_cert_url',
-            'client_x509_cert_url'
-        ])
-    
-    # Check all required fields are present and non-empty
-    missing = [field for field in required_fields if not info.get(field)]
+    # Check required fields
+    missing = [field for field in required if not creds.get(field)]
     if missing:
-        print(f"Missing required fields: {', '.join(missing)}")
-        return False
-            
-    # Validate type
-    if info['type'] != 'service_account':
-        print("Invalid credential type - must be 'service_account'")
+        print(f"Missing required database fields: {', '.join(missing)}")
         return False
         
-    # Validate private key format
-    private_key = info.get('private_key', '')
-    if not private_key:
-        print("Private key is missing")
-        return False
-        
-    # Split into lines and validate structure
-    lines = private_key.strip().split('\n')
-    if len(lines) < 3:
-        print(f"Private key is malformed - found {len(lines)} lines, expected > 3")
-        return False
-            
-    if not lines[0].strip() == "-----BEGIN PRIVATE KEY-----":
-        print(f"Private key is missing proper header. Found: {lines[0]}")
-        return False
-            
-    if not lines[-1].strip() == "-----END PRIVATE KEY-----":
-        print(f"Private key is missing proper footer. Found: {lines[-1]}")
-        return False
-    
     return True
 
-def initialize_firebase():
-    """Initialize Firebase with service account credentials"""
-    global db, storage_bucket
+def initialize_firebase_database():
+    """Initialize Firebase for database operations"""
+    global _db_firebase_app, _db, _storage_bucket
     
     try:
         # Check if already initialized
         try:
-            app = firebase_admin.get_app()
-            db = firestore.client()
-            storage_bucket = storage.bucket()
-            print("Firebase already initialized")
-            return app, db, storage_bucket
+            _db_firebase_app = firebase_admin.get_app('database')
+            return _db_firebase_app, _db, _storage_bucket
         except ValueError:
             pass  # App not initialized yet
             
-        # Get and validate private key
-        private_key = get_formatted_private_key()
-        if not private_key:
-            print("Failed to get formatted private key")
+        # Get database credentials
+        creds = get_database_credentials()
+        
+        # Debug output
+        print("\nDatabase Firebase Credentials Status:")
+        print(f"Project ID: {creds.get('project_id')}")
+        print(f"Client Email: {creds.get('client_email')}")
+        print(f"Private Key present: {bool(creds.get('private_key'))}")
+        
+        # Validate credentials
+        if not validate_database_credentials(creds):
+            print("Invalid database credentials")
             return None
             
-        # Get other required credentials
-        project_id = os.getenv('AUTH_PROJECT_ID')
-        client_email = os.getenv('AUTH_CLIENT_EMAIL')
+        # Initialize Firebase app for database
+        cert = credentials.Certificate(creds)
+        _db_firebase_app = firebase_admin.initialize_app(cert, name='database')
         
-        # Debug output for credentials
-        print("\nFirebase Credentials Status:")
-        print(f"Project ID present: {bool(project_id)}")
-        print(f"Client email present: {bool(client_email)}")
-        print(f"Private key present and formatted: {bool(private_key)}")
+        # Initialize services
+        _db = firestore.client(app=_db_firebase_app)
+        _storage_bucket = storage.bucket(app=_db_firebase_app)
         
-        # Create minimal credentials dictionary for database access
-        creds = {
-            'type': 'service_account',
-            'project_id': project_id,
-            'private_key': private_key,
-            'client_email': client_email,
-        }
-        
-        # Validate credentials (not for auth)
-        if not validate_service_account_info(creds, for_auth=False):
-            print("Invalid service account credentials")
-            return None
-            
-        try:
-            # Initialize Firebase
-            cred = credentials.Certificate(creds)
-            app = firebase_admin.initialize_app(cred)
-            
-            # Initialize Firestore and Storage
-            db = firestore.client()
-            storage_bucket = storage.bucket()
-            
-            print("Firebase initialized successfully with Firestore and Storage")
-            return app, db, storage_bucket
-        except Exception as e:
-            print(f"Firebase initialization failed: {str(e)}")
-            return None
+        print("Database Firebase initialized successfully")
+        return _db_firebase_app, _db, _storage_bucket
         
     except Exception as e:
-        print(f"Error initializing Firebase: {str(e)}")
-        print("\nEnvironment variables status:")
-        for key in ['AUTH_PROJECT_ID', 'AUTH_CLIENT_EMAIL', 'AUTH_PRIVATE_KEY']:
-            value = os.getenv(key)
-            print(f"{key}: {'Present' if value else 'Missing'}")
+        print(f"Error initializing database Firebase: {str(e)}")
         return None
 
-# Initialize Firebase services
+# Initialize Firebase database
 try:
-    result = initialize_firebase()
+    result = initialize_firebase_database()
     if result:
         app, db, storage_bucket = result
     else:
-        print("Warning: Firebase initialization failed, services will be unavailable")
+        print("Warning: Database Firebase initialization failed")
         db = None
         storage_bucket = None
 except Exception as e:
-    print(f"Error initializing Firebase. Application may not work properly: {str(e)}")
+    print(f"Error in database initialization: {str(e)}")
     db = None
     storage_bucket = None
 
 # Export for use in other modules
-__all__ = ['db', 'storage_bucket', 'auth'] 
+__all__ = ['db', 'storage_bucket'] 
