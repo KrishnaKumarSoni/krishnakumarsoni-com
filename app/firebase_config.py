@@ -48,27 +48,32 @@ def get_formatted_private_key():
             # If no header/footer, assume entire content is base64
             base64_content = key.replace(header, '').replace(footer, '').strip()
         
-        # Clean up base64 content - remove all whitespace
+        # Clean up base64 content - remove all whitespace and newlines
         base64_content = ''.join(base64_content.split())
         
-        # Format key properly
-        parts = [header]
+        # Format key with proper line breaks
+        formatted_lines = [header]
+        
         # Split base64 into 64-character chunks
         for i in range(0, len(base64_content), 64):
-            parts.append(base64_content[i:i+64])
-        parts.append(footer)
+            chunk = base64_content[i:i+64]
+            formatted_lines.append(chunk)
+            
+        formatted_lines.append(footer)
         
-        # Join with newlines and ensure final newline
-        formatted_key = '\n'.join(parts) + '\n'
+        # Join with newlines, ensuring proper spacing
+        formatted_key = '\n'.join(formatted_lines) + '\n'
         
         # Debug output
         print("\nFormatted Key Debug:")
-        print(f"Formatted key has {len(parts)} lines")
+        lines = formatted_key.split('\n')
+        print(f"Formatted key has {len(lines)} lines")
         print(f"Header present: {formatted_key.startswith(header)}")
         print(f"Footer present: {formatted_key.endswith(footer + '\n')}")
-        print(f"First line: {parts[0]}")
-        print(f"Middle sample: {parts[1] if len(parts) > 2 else 'N/A'}")
-        print(f"Last line: {parts[-1]}")
+        print(f"Line lengths:")
+        for i, line in enumerate(lines):
+            if line and i > 0 and i < len(lines) - 1:  # Skip header/footer
+                print(f"Line {i}: {len(line)} characters")
         
         return formatted_key
         
