@@ -31,15 +31,21 @@ def get_formatted_private_key():
         header = "-----BEGIN PRIVATE KEY-----"
         footer = "-----END PRIVATE KEY-----"
         
-        if header not in key or footer not in key:
-            print("Private key missing header or footer")
-            return None
+        # Extract base64 content
+        if header in key and footer in key:
+            # Key already has header/footer, just clean up
+            parts = key.split('\\n')
+            parts = [part.strip() for part in parts if part.strip()]
+        else:
+            # Key is just base64, need to add header/footer
+            base64_content = key.replace('\\n', '')
+            parts = [header]
+            # Split into 64-char chunks
+            for i in range(0, len(base64_content), 64):
+                parts.append(base64_content[i:i+64])
+            parts.append(footer)
             
-        # Split the key into parts and clean
-        parts = key.split('\\n')
-        parts = [part.strip() for part in parts if part.strip()]
-        
-        # Ensure header and footer are separate lines
+        # Ensure header and footer are correct
         if parts[0] != header:
             parts[0] = header
         if parts[-1] != footer:
@@ -47,11 +53,12 @@ def get_formatted_private_key():
             
         # Join with actual newlines and ensure final newline
         formatted_key = '\n'.join(parts) + '\n'
-            
+        
         # Debug output
         print(f"Formatted key has {len(parts)} lines")
         print(f"Header present: {formatted_key.startswith(header)}")
-        print(f"Footer present: {formatted_key.endswith(footer + '\n')}")
+        print(f"Footer present: {formatted_key.endswith(footer + '\\n')}")
+        print(f"Sample structure:\n{formatted_key[:100]}...")
         
         return formatted_key
         
@@ -63,7 +70,15 @@ def get_database_credentials():
     """Get credentials for database Firebase project"""
     private_key = get_formatted_private_key()
     if not private_key:
+        print("Failed to get formatted private key")
         return None
+        
+    # Debug the key format
+    print("\nPrivate Key Debug:")
+    lines = private_key.split('\n')
+    print(f"Number of lines: {len(lines)}")
+    print(f"First line: {lines[0]}")
+    print(f"Last non-empty line: {[line for line in lines if line][-1]}")
         
     return {
         'type': 'service_account',
