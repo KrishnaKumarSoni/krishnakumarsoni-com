@@ -139,6 +139,10 @@ def initialize_firebase_database():
         print(f"Error initializing database Firebase: {str(e)}")
         return None
 
+def initialize_firebase():
+    """Initialize Firebase with service account credentials - for backward compatibility"""
+    return initialize_firebase_database()
+
 # Initialize Firebase database
 try:
     result = initialize_firebase_database()
@@ -154,4 +158,4 @@ except Exception as e:
     storage_bucket = None
 
 # Export for use in other modules
-__all__ = ['db', 'storage_bucket', 'get_formatted_private_key'] 
+__all__ = ['db', 'storage_bucket', 'get_formatted_private_key', 'initialize_firebase'] 
