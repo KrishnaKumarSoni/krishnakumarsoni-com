@@ -39,25 +39,31 @@ def get_formatted_private_key():
         footer = "-----END PRIVATE KEY-----"
         
         # Extract base64 content
-        if header in key and footer in key:
-            # Get content between header and footer
-            start = key.index(header) + len(header)
-            end = key.index(footer)
-            base64_content = key[start:end].strip()
+        if header in key:
+            # Get content after header
+            content_start = key.index(header) + len(header)
+            content_end = key.index(footer) if footer in key else len(key)
+            base64_content = key[content_start:content_end]
         else:
-            # If no header/footer, assume entire content is base64
-            base64_content = key.replace(header, '').replace(footer, '').strip()
+            base64_content = key
+            
+        # Clean up base64 content
+        base64_content = ''.join(base64_content.split())  # Remove all whitespace
         
-        # Clean up base64 content - remove all whitespace and newlines
-        base64_content = ''.join(base64_content.split())
-        
+        # Ensure we don't have duplicate content
+        if header in base64_content:
+            base64_content = base64_content[base64_content.index(header) + len(header):]
+        if footer in base64_content:
+            base64_content = base64_content[:base64_content.index(footer)]
+            
         # Format key with proper line breaks
         formatted_lines = [header]
         
         # Split base64 into 64-character chunks
         for i in range(0, len(base64_content), 64):
             chunk = base64_content[i:i+64]
-            formatted_lines.append(chunk)
+            if chunk:  # Only add non-empty chunks
+                formatted_lines.append(chunk)
             
         formatted_lines.append(footer)
         
@@ -70,7 +76,8 @@ def get_formatted_private_key():
         print(f"Formatted key has {len(lines)} lines")
         print(f"Header present: {formatted_key.startswith(header)}")
         print(f"Footer present: {formatted_key.endswith(footer + '\n')}")
-        print(f"Line lengths:")
+        print(f"Base64 content length: {len(base64_content)}")
+        print("Line lengths:")
         for i, line in enumerate(lines):
             if line and i > 0 and i < len(lines) - 1:  # Skip header/footer
                 print(f"Line {i}: {len(line)} characters")
