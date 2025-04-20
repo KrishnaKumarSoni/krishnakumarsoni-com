@@ -25,10 +25,16 @@ def get_formatted_private_key():
     # Remove any quotes and whitespace
     key = key.strip().strip('"').strip("'")
     
-    # Split the key into parts
-    parts = key.split('\\n')
+    # Handle escaped newlines by first converting them to actual newlines
+    key = key.replace('\\n', '\n')
+    
+    # Now split on actual newlines
+    parts = key.split('\n')
+    parts = [p for p in parts if p.strip()]  # Remove empty lines
+    
     if len(parts) < 3:
         print("Private key appears malformed - not enough parts after splitting")
+        print(f"Found {len(parts)} parts")
         return None
         
     # Reconstruct the key with proper line breaks
@@ -41,7 +47,9 @@ def get_formatted_private_key():
             else:
                 # Add base64 content in chunks
                 while part:
-                    formatted_parts.append(part[:64])
+                    chunk = part[:64]
+                    if chunk:  # Only add non-empty chunks
+                        formatted_parts.append(chunk)
                     part = part[64:]
     
     # Join with proper newlines and ensure final newline
@@ -63,6 +71,7 @@ def get_formatted_private_key():
     print(f"   Header present: {'-----BEGIN PRIVATE KEY-----' in formatted_key}")
     print(f"   Footer present: {'-----END PRIVATE KEY-----' in formatted_key}")
     print(f"   Number of line breaks: {formatted_key.count('\n')}")
+    print(f"   Total key length: {len(formatted_key)}")
     
     return formatted_key
 
