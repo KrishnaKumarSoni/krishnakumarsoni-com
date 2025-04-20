@@ -25,39 +25,39 @@ def get_formatted_private_key():
     # Remove any quotes and whitespace
     key = key.strip().strip('"').strip("'")
     
-    # Extract the base64 content between header and footer
-    if '-----BEGIN PRIVATE KEY-----' in key and '-----END PRIVATE KEY-----' in key:
-        # First, clean up any existing formatting
-        key = key.replace('\\n', '\n').replace('\n', '')
-        key = key.replace('-----BEGIN PRIVATE KEY-----', '')
-        key = key.replace('-----END PRIVATE KEY-----', '')
-        key = key.strip()
+    # Split the key into parts using \n literal
+    parts = key.split('\\n')
+    
+    # Clean up parts and ensure proper structure
+    if len(parts) > 2 and parts[0] == "-----BEGIN PRIVATE KEY-----" and parts[-1] == "-----END PRIVATE KEY-----":
+        # Get the base64 content (everything between header and footer)
+        content = ''.join(parts[1:-1])
         
-        # Format the key properly with exact line breaks
-        lines = []
-        lines.append('-----BEGIN PRIVATE KEY-----')
+        # Format with proper line breaks
+        formatted_lines = []
+        formatted_lines.append("-----BEGIN PRIVATE KEY-----\n")  # Add newline after header
         
-        # Add base64 content in 64-character chunks
-        for i in range(0, len(key), 64):
-            lines.append(key[i:i+64])
+        # Split base64 content into 64-character chunks
+        for i in range(0, len(content), 64):
+            formatted_lines.append(content[i:i+64] + "\n")  # Add newline after each chunk
             
-        lines.append('-----END PRIVATE KEY-----')
+        formatted_lines.append("-----END PRIVATE KEY-----\n")  # Add newline after footer
         
-        # Join with proper newlines and ensure final newline
-        formatted_key = '\n'.join(lines) + '\n'
+        # Join without additional newlines since we added them explicitly
+        formatted_key = ''.join(formatted_lines)
         
         # Debug output
         print("\nKey formatting details:")
-        print(f"1. Number of lines: {len(lines)}")
+        print(f"1. Number of lines: {len(formatted_lines)}")
         print("2. Line lengths:")
-        for i, line in enumerate(lines):
-            if i < 3 or i > len(lines) - 3:  # Show first and last few lines
+        for i, line in enumerate(formatted_lines):
+            if i < 3 or i > len(formatted_lines) - 3:  # Show first and last few lines
                 print(f"   Line {i+1}: {len(line)} chars")
         print("3. Sample structure:")
-        print(f"   First line: {lines[0]}")
-        print(f"   Second line: {lines[1][:10]}...")
-        print(f"   Last line: {lines[-1]}")
-        print("4. Final newline present:", formatted_key.endswith('\n'))
+        print(f"   First line: {formatted_lines[0].rstrip()}")
+        print(f"   Second line: {formatted_lines[1][:10]}...")
+        print(f"   Last line: {formatted_lines[-1].rstrip()}")
+        print("4. Contains explicit newlines:", "\\n" not in formatted_key and "\n" in formatted_key)
         
         return formatted_key
     else:
