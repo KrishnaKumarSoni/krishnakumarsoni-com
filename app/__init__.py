@@ -15,21 +15,28 @@ from .firebase_config import db, storage_bucket
 
 load_dotenv()
 
+# Global app instance
+_app = None
+
 def create_app():
+    global _app
+    if _app is not None:
+        return _app
+
     # Initialize Flask app with correct template and static folders
-    app = Flask(__name__, 
+    _app = Flask(__name__, 
                 template_folder='../templates',
                 static_folder='../static',
                 static_url_path='/static')
     
     # Configure CORS to allow credentials
-    CORS(app, supports_credentials=True)
+    CORS(_app, supports_credentials=True)
     
     # Configure session
-    app.config.update(
+    _app.config.update(
         SECRET_KEY=os.getenv('APP_SECRET', 'dev-secret-key'),
         SESSION_TYPE='filesystem',  # Use filesystem to store session data
-        SESSION_FILE_DIR=os.path.join(os.path.dirname(app.root_path), 'flask_session'),
+        SESSION_FILE_DIR=os.path.join(os.path.dirname(_app.root_path), 'flask_session'),
         SESSION_COOKIE_SECURE=False,  # Set to True in production with HTTPS
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE='Lax',
@@ -37,29 +44,34 @@ def create_app():
     )
     
     # Initialize Flask-Session
-    Session(app)
+    Session(_app)
     
     # Make Firebase services available to the app
-    app.config['firebase_db'] = db
-    app.config['firebase_storage'] = storage_bucket
+    _app.config['firebase_db'] = db
+    _app.config['firebase_storage'] = storage_bucket
     
     # Register blueprints
     from .auth.routes import auth_bp
     from .blog import init_blog_routes
     
-    app.register_blueprint(auth_bp)
-    init_blog_routes(app)
+    _app.register_blueprint(auth_bp)
+    init_blog_routes(_app)
     
     # Create required directories
     for directory in [
-        os.path.join(app.static_folder, 'uploads'),
-        os.path.join(app.static_folder, 'images'),
-        os.path.join(os.path.dirname(app.root_path), 'flask_session')
+        os.path.join(_app.static_folder, 'uploads'),
+        os.path.join(_app.static_folder, 'images'),
+        os.path.join(os.path.dirname(_app.root_path), 'flask_session')
     ]:
         if not os.path.exists(directory):
             os.makedirs(directory)
             
     # Register core routes
+    register_core_routes(_app)
+    
+    return _app
+
+def register_core_routes(app):
     @app.route('/')
     def index():
         metadata = get_metadata_from_markdown('home')
@@ -164,8 +176,6 @@ Sitemap: {app.config['SITE_URL']}/sitemap.xml
     @app.errorhandler(500)
     def server_error(e):
         return render_template('500.html', meta_title="Server Error"), 500
-    
-    return app
 
 # Helper functions
 def get_markdown_content(directory, filename='index.md'):
