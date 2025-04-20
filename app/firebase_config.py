@@ -25,57 +25,38 @@ def get_formatted_private_key():
     # Remove any quotes and whitespace
     key = key.strip().strip('"').strip("'")
     
-    # Split the key into parts
-    parts = []
-    current_part = []
-    
-    for line in key.split('\\n'):
-        line = line.strip()
-        if line:
-            if line.startswith('-----BEGIN'):
-                if current_part:
-                    parts.append(''.join(current_part))
-                current_part = [line]
-            elif line.startswith('-----END'):
-                current_part.append(line)
-                parts.append(''.join(current_part))
-                current_part = []
-            else:
-                current_part.append(line)
-    
-    if current_part:
-        parts.append(''.join(current_part))
-    
-    # Reconstruct the key with proper formatting
-    formatted_key = []
-    for part in parts:
-        if part.startswith('-----BEGIN'):
-            formatted_key.append(part)
-            formatted_key.append('')  # Add empty line after header
-        elif part.startswith('-----END'):
-            formatted_key.append('')  # Add empty line before footer
-            formatted_key.append(part)
-            formatted_key.append('')  # Add final newline
-        else:
-            # Add the base64 parts with proper line breaks
-            while part:
-                formatted_key.append(part[:64])
-                part = part[64:]
-    
-    result = '\n'.join(formatted_key)
-    
-    # Debug output
-    print("\nFormatted key structure:")
-    print("1. Has header:", "-----BEGIN PRIVATE KEY-----" in result)
-    print("2. Has footer:", "-----END PRIVATE KEY-----" in result)
-    print("3. Number of lines:", len(result.split('\n')))
-    print("4. First few characters:", result[:50] + "...")
-    print("5. Key format sample:")
-    print("   - Start:", result.split('\n')[0])
-    print("   - Middle sample:", result.split('\n')[len(result.split('\n'))//2])
-    print("   - End:", result.split('\n')[-2])
-    
-    return result
+    # Extract the base64 content between header and footer
+    if '-----BEGIN PRIVATE KEY-----' in key and '-----END PRIVATE KEY-----' in key:
+        content = key.replace('-----BEGIN PRIVATE KEY-----', '')
+        content = content.replace('-----END PRIVATE KEY-----', '')
+        content = content.replace('\\n', '').strip()
+        
+        # Format the key properly
+        lines = ['-----BEGIN PRIVATE KEY-----']
+        # Split the content into 64-character chunks
+        for i in range(0, len(content), 64):
+            lines.append(content[i:i+64])
+        lines.append('-----END PRIVATE KEY-----')
+        
+        # Join with proper newlines
+        formatted_key = '\n'.join(lines)
+        
+        # Debug output
+        print("\nKey formatting details:")
+        print(f"1. Number of lines: {len(lines)}")
+        print("2. Line lengths:")
+        for i, line in enumerate(lines):
+            if i < 3 or i > len(lines) - 3:  # Show first and last few lines
+                print(f"   Line {i+1}: {len(line)} chars")
+        print("3. Sample structure:")
+        print(f"   First line: {lines[0]}")
+        print(f"   Second line: {lines[1][:10]}...")
+        print(f"   Last line: {lines[-1]}")
+        
+        return formatted_key
+    else:
+        print("Private key is missing header or footer")
+        return None
 
 def validate_service_account_info(info):
     """Validate the service account info before using it"""
@@ -108,25 +89,24 @@ def validate_service_account_info(info):
         print("Private key is missing")
         return False
     
-    key_lines = private_key.strip().split('\n')
-    if len(key_lines) < 3:
-        print("Private key is malformed - not enough lines")
+    # Split into lines and validate structure
+    lines = private_key.strip().split('\n')
+    if len(lines) < 3:
+        print(f"Private key is malformed - found {len(lines)} lines, expected > 3")
         return False
         
-    if not key_lines[0].strip() == "-----BEGIN PRIVATE KEY-----":
-        print("Private key is missing proper header")
+    if not lines[0].strip() == "-----BEGIN PRIVATE KEY-----":
+        print(f"Private key is missing proper header. Found: {lines[0]}")
         return False
         
-    if not key_lines[-2].strip() == "-----END PRIVATE KEY-----":
-        print("Private key is missing proper footer")
+    if not lines[-1].strip() == "-----END PRIVATE KEY-----":
+        print(f"Private key is missing proper footer. Found: {lines[-1]}")
         return False
     
-    # Print key structure for debugging
-    print("\nKey validation check:")
-    print(f"1. Number of lines in key: {len(key_lines)}")
-    print(f"2. Header check: {key_lines[0]}")
-    print(f"3. Footer check: {key_lines[-2]}")
-    print(f"4. Has content between header/footer: {len(key_lines) > 2}")
+    # Validate base64 content
+    content_lines = lines[1:-1]
+    if not all(len(line.strip()) <= 64 for line in content_lines):
+        print("Warning: Some content lines exceed 64 characters")
     
     return True
 
