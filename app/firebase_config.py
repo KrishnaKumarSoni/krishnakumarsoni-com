@@ -10,9 +10,8 @@ load_dotenv()
 # Debug: Print environment variables
 print("Environment variables loaded")
 
-# Singleton pattern for Firebase apps
+# Singleton pattern for Firebase
 _firebase_app = None
-_auth_firebase_app = None
 _db = None
 _storage_bucket = None
 
@@ -36,29 +35,23 @@ def get_formatted_private_key():
             print("Private key missing header or footer")
             return None
             
-        # Split the key into parts
+        # Split the key into parts and clean
         parts = key.split('\\n')
-        
-        # Remove empty parts and strip whitespace
         parts = [part.strip() for part in parts if part.strip()]
         
         # Ensure header and footer are separate lines
-        if header in parts[0]:
+        if parts[0] != header:
             parts[0] = header
-        if footer in parts[-1]:
+        if parts[-1] != footer:
             parts[-1] = footer
             
-        # Join with actual newlines
-        formatted_key = '\n'.join(parts)
-        
-        # Ensure final newline
-        if not formatted_key.endswith('\n'):
-            formatted_key += '\n'
+        # Join with actual newlines and ensure final newline
+        formatted_key = '\n'.join(parts) + '\n'
             
         # Debug output
         print(f"Formatted key has {len(parts)} lines")
-        print(f"Header present: {header in formatted_key}")
-        print(f"Footer present: {footer in formatted_key}")
+        print(f"Header present: {formatted_key.startswith(header)}")
+        print(f"Footer present: {formatted_key.endswith(footer + '\n')}")
         print(f"Sample structure:\n{formatted_key[:100]}...")
         
         return formatted_key
@@ -68,32 +61,61 @@ def get_formatted_private_key():
         return None
 
 def validate_service_account_info(info):
-    """Validate service account credentials dictionary"""
-    required_fields = ['type', 'project_id', 'private_key', 'client_email']
+    """Validate the service account info before using it"""
+    required_fields = [
+        'type',
+        'project_id',
+        'private_key_id',
+        'private_key',
+        'client_email',
+        'client_id',
+        'auth_uri',
+        'token_uri',
+        'auth_provider_x509_cert_url',
+        'client_x509_cert_url'
+    ]
     
-    # Check all required fields are present and non-empty
-    for field in required_fields:
-        if not info.get(field):
-            print(f"Missing required field: {field}")
-            return False
-            
-    # Validate private key format
-    private_key = info['private_key']
-    if not private_key.startswith('-----BEGIN PRIVATE KEY-----'):
-        print("Private key missing header")
+    missing = [field for field in required_fields if not info.get(field)]
+    if missing:
+        print(f"Missing required fields: {', '.join(missing)}")
         return False
-    if not private_key.endswith('-----END PRIVATE KEY-----\n'):
-        print("Private key missing footer or final newline")
+    
+    # Validate type
+    if info['type'] != 'service_account':
+        print("Invalid credential type - must be 'service_account'")
+        return False
+    
+    # Validate private key format
+    private_key = info.get('private_key', '')
+    if not private_key:
+        print("Private key is missing")
+        return False
+    
+    # Split into lines and validate structure
+    lines = private_key.strip().split('\n')
+    if len(lines) < 3:
+        print(f"Private key is malformed - found {len(lines)} lines, expected > 3")
         return False
         
-    # Count number of lines in private key
-    key_lines = private_key.strip().split('\n')
-    print(f"Private key has {len(key_lines)} lines")
+    if not lines[0].strip() == "-----BEGIN PRIVATE KEY-----":
+        print(f"Private key is missing proper header. Found: {lines[0]}")
+        return False
+        
+    if not lines[-1].strip() == "-----END PRIVATE KEY-----":
+        print(f"Private key is missing proper footer. Found: {lines[-1]}")
+        return False
+    
+    # Validate base64 content
+    content_lines = lines[1:-1]
+    if not all(len(line.strip()) <= 64 for line in content_lines):
+        print("Warning: Some content lines exceed 64 characters")
     
     return True
 
 def initialize_firebase():
     """Initialize Firebase with service account credentials"""
+    global db, storage_bucket
+    
     try:
         # Check if already initialized
         try:
@@ -133,8 +155,13 @@ def initialize_firebase():
         # Initialize Firebase
         cred = credentials.Certificate(creds)
         app = firebase_admin.initialize_app(cred)
-        print("Firebase initialized successfully")
-        return app
+        
+        # Initialize Firestore and Storage
+        db = firestore.client()
+        storage_bucket = storage.bucket()
+        
+        print("Firebase initialized successfully with Firestore and Storage")
+        return app, db, storage_bucket
         
     except Exception as e:
         print(f"Error initializing Firebase: {str(e)}")
@@ -144,14 +171,17 @@ def initialize_firebase():
             print(f"{key}: {'Present' if value else 'Missing'}")
         return None
 
-# Try to initialize Firebase services
+# Initialize Firebase services
 try:
-    db, storage_bucket = initialize_firebase()
-    if db is None:
+    result = initialize_firebase()
+    if result:
+        app, db, storage_bucket = result
+    else:
         print("Warning: Firebase initialization failed, services will be unavailable")
+        db = None
+        storage_bucket = None
 except Exception as e:
     print(f"Error initializing Firebase. Application may not work properly: {str(e)}")
-    # Set placeholder values to prevent import errors
     db = None
     storage_bucket = None
 
