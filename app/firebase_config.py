@@ -35,26 +35,29 @@ def get_formatted_private_key():
             print("Private key missing header or footer")
             return None
             
-        # Split the key into parts and clean
-        parts = key.split('\\n')
-        parts = [part.strip() for part in parts if part.strip()]
+        # Convert literal \n to actual newlines
+        key = key.replace('\\n', '\n')
         
-        # Ensure header and footer are separate lines
-        if parts[0] != header:
-            parts[0] = header
-        if parts[-1] != footer:
-            parts[-1] = footer
+        # Split into lines and clean
+        lines = [line.strip() for line in key.split('\n') if line.strip()]
+        
+        # Validate structure
+        if not lines[0] == header:
+            print("First line is not header")
+            return None
             
-        # Join with actual newlines and ensure final newline
-        formatted_key = '\n'.join(parts) + '\n'
+        if not lines[-1] == footer:
+            print("Last line is not footer")
+            return None
             
         # Debug output
-        print(f"Formatted key has {len(parts)} lines")
-        print(f"Header present: {formatted_key.startswith(header)}")
-        print(f"Footer present: {formatted_key.endswith(footer + '\n')}")
-        print(f"Sample structure:\n{formatted_key[:100]}...")
+        print(f"Formatted key has {len(lines)} lines")
+        print(f"Header present: {lines[0] == header}")
+        print(f"Footer present: {lines[-1] == footer}")
+        print(f"Sample structure:\n{lines[0]}\n[...key content...]\n{lines[-1]}")
         
-        return formatted_key
+        # Join with actual newlines and ensure final newline
+        return '\n'.join(lines) + '\n'
         
     except Exception as e:
         print(f"Error formatting private key: {str(e)}")
@@ -116,7 +119,11 @@ def initialize_firebase():
     try:
         # Check if already initialized
         try:
-            return firebase_admin.get_app()
+            app = firebase_admin.get_app()
+            db = firestore.client()
+            storage_bucket = storage.bucket()
+            print("Firebase already initialized")
+            return app, db, storage_bucket
         except ValueError:
             pass  # App not initialized yet
             
@@ -149,16 +156,20 @@ def initialize_firebase():
             print("Invalid service account credentials")
             return None
             
-        # Initialize Firebase
-        cred = credentials.Certificate(creds)
-        app = firebase_admin.initialize_app(cred)
-        
-        # Initialize Firestore and Storage
-        db = firestore.client()
-        storage_bucket = storage.bucket()
-        
-        print("Firebase initialized successfully with Firestore and Storage")
-        return app, db, storage_bucket
+        try:
+            # Initialize Firebase
+            cred = credentials.Certificate(creds)
+            app = firebase_admin.initialize_app(cred)
+            
+            # Initialize Firestore and Storage
+            db = firestore.client()
+            storage_bucket = storage.bucket()
+            
+            print("Firebase initialized successfully with Firestore and Storage")
+            return app, db, storage_bucket
+        except Exception as e:
+            print(f"Firebase initialization failed: {str(e)}")
+            return None
         
     except Exception as e:
         print(f"Error initializing Firebase: {str(e)}")
