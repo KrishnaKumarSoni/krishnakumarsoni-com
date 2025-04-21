@@ -1,0 +1,35 @@
+/* Color System Tokens */
+
+:root {
+  /* Brand Colors */
+  --color-white: #ffffff;
+  --color-black: #111111;
+  --color-brand-primary: #D35400;
+  --color-brand-primary-light: #FF7D2A;
+  --color-brand-primary-dark: #B24600;
+  
+  /* Neutral Colors */
+  
+  /* Text Colors */
+  --color-text-primary: #2C3E50;
+  --color-text-secondary: #5D6D7E;
+  --color-text-tertiary: #8395A7;
+  
+  /* Accent Colors */
+  --color-accent-teal: #13B0A5;
+  --color-accent-purple: #9D4EDD;
+  --color-accent-yellow: #FFD60A;
+  --color-accent-pink: #FF5A7E;
+  
+  /* Semantic Colors */
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #F8F9FA;
+  --color-border: rgba(0, 0, 0, 0.08);
+  
+  /* Gradient Maps */
+  --gradient-brand-primary: linear-gradient(135deg, #e67e22 0%, #D35400 100%);
+  --gradient-brand-hover: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+  
+  /* Shadow Colors */
+  --shadow-brand: rgba(211, 84, 0, 0.2);
+} 

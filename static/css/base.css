@@ -1,30 +1,33 @@
 /* Base styles */
 
+/* Legacy variable definitions for backward compatibility */
 :root {
-  /* Color system */
+  /* Basic Layout - must be defined first */
+  --spacing-unit: 8px;
+  --nav-height: 60px;
+  
+  /* Legacy color variables */
   --white: #ffffff;
   --black: #111111;
   --burnt-orange: #D35400;
   --burnt-orange-light: #FF7D2A;
   --burnt-orange-dark: #B24600;
   
-  /* Color variations for funky shades */
+  /* Legacy color variations */
   --funky-teal: #13B0A5;
   --funky-purple: #9D4EDD;
   --funky-yellow: #FFD60A;
   --funky-pink: #FF5A7E;
   
-  /* Text colors */
+  /* Legacy text colors */
   --text-dark: #2C3E50;
   --text-medium: #5D6D7E;
   --text-light: #8395A7;
   
-  /* Layout */
-  --nav-height: 60px;
+  /* Legacy layout */
   --border-radius-sm: 12px;
   --border-radius-md: 20px;
   --border-radius-lg: 32px;
-  --spacing-unit: 8px;
   
   /* Transitions */
   --transition-fast: 0.2s ease;

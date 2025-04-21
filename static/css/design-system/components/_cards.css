@@ -1,0 +1,82 @@
+/* Card Components */
+
+/* Base Card */
+.card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 20px;
+  padding: 24px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(211, 84, 0, 0.2);
+}
+
+/* Card Variations */
+.card--flat {
+  box-shadow: none;
+}
+
+.card--elevated {
+  box-shadow: 0 2px 4px rgba(211, 84, 0, 0.2);
+}
+
+.card--interactive {
+  cursor: pointer;
+}
+
+/* Card Content */
+.card__header {
+  margin-bottom: 16px;
+}
+
+.card__title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #2C3E50;
+  margin: 0 0 4px;
+}
+
+.card__content {
+  margin-bottom: 16px;
+}
+
+.card__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Offering Card - For backward compatibility */
+.offering-items {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 24px;
+  border-radius: 20px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.offering-items:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(211, 84, 0, 0.2);
+}
+
+.offering-items h2 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.25rem;
+  margin: 0 0 16px;
+  color: #2C3E50;
+  font-weight: 500;
+}
+
+/* Product Card - For backward compatibility */
+.product-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 20px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+} 

@@ -1,0 +1,30 @@
+/* Spacing System Tokens */
+
+:root {
+  /* Base Spacing Unit */
+  --spacing-unit: 8px;
+  
+  /* Spacing Scale */
+  --spacing-2xs: calc(var(--spacing-unit) * 0.25); /* 2px */
+  --spacing-xs: calc(var(--spacing-unit) * 0.5);   /* 4px */
+  --spacing-sm: var(--spacing-unit);               /* 8px */
+  --spacing-md: calc(var(--spacing-unit) * 2);     /* 16px */
+  --spacing-lg: calc(var(--spacing-unit) * 3);     /* 24px */
+  --spacing-xl: calc(var(--spacing-unit) * 4);     /* 32px */
+  --spacing-2xl: calc(var(--spacing-unit) * 6);    /* 48px */
+  --spacing-3xl: calc(var(--spacing-unit) * 8);    /* 64px */
+  
+  /* Component Specific */
+  --nav-height: 60px;
+  --container-padding: var(--spacing-md);
+  
+  /* Layout Spacing */
+  --section-spacing-sm: var(--spacing-xl);
+  --section-spacing-md: var(--spacing-2xl);
+  --section-spacing-lg: var(--spacing-3xl);
+  
+  /* Grid Gap */
+  --grid-gap-sm: var(--spacing-md);
+  --grid-gap-md: var(--spacing-lg);
+  --grid-gap-lg: var(--spacing-xl);
+} 

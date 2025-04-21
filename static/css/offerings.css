@@ -1,7 +1,7 @@
 /* Offerings Page Styles */
 .offerings-section {
     padding: 2rem 1.5rem;
-    min-height: calc(100vh - var(--nav-height));
+    min-height: calc(100vh - 60px);
     max-width: 1400px;
     margin: 0 auto;
 }
@@ -9,7 +9,7 @@
 .offerings-section h1 {
     font-size: 1.75rem;
     margin-bottom: 2rem;
-    color: var(--text-dark);
+    color: #2C3E50;
     font-weight: 500;
 }
 
@@ -37,7 +37,7 @@
     font-family: 'Space Grotesk', sans-serif;
     font-size: 1.25rem;
     margin: 0 0 1rem;
-    color: var(--text-dark);
+    color: #2C3E50;
     font-weight: 500;
 }
 
@@ -58,7 +58,7 @@
     font-family: 'Plus Jakarta Sans', sans-serif;
     font-size: 0.9rem;
     line-height: 1.5;
-    color: var(--text-medium);
+    color: #5D6D7E;
     font-weight: 400;
 }
 
