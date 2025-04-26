@@ -1,146 +1,28 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM fully loaded');
-    const cartWidget = document.querySelector('.cart-widget');
-    const cartCount = document.querySelector('.cart-count');
-    const cartItems = document.querySelector('.cart-items');
-    const expandCart = document.querySelector('.expand-cart');
-    const cartDetails = document.querySelector('.cart-details');
-    const payButton = document.querySelector('.pay-button');
-    const payContainer = document.querySelector('.pay-container');
-    const emailInput = document.querySelector('.email-input');
-    const submitEmail = document.querySelector('.submit-email');
-    const closeBanner = document.querySelector('.close-banner');
-    const totalPrice = document.querySelector('.total-price');
-    const totalAmount = document.querySelector('.total-amount');
+    console.log('Offerings page loaded');
     
-    // Initialize selectedItems from localStorage or create new Set
-    let selectedItems = new Set(JSON.parse(localStorage.getItem('cartItems')) || []);
-    let isEmailMode = false;
-    let OFFERINGS = [];
-
-    // Initially hide the cart widget and details
-    cartWidget.style.display = 'none';
-    cartDetails.classList.remove('expanded');
-
-    // Fetch offerings data
-    fetch('/static/configurations/offerings.json')
-        .then(response => response.json())
-        .then(data => {
-            OFFERINGS = data.offerings;
-            updateInitialState();
-        })
-        .catch(error => {
-            console.error('Error loading offerings configuration:', error);
-        });
-
-    function updateInitialState() {
-        // Set initial state for offering cards based on localStorage
-        document.querySelectorAll('.offering-card').forEach(card => {
-            const productId = card.dataset.id;
-            const ctaButton = card.querySelector('.offering-cta');
-            
-            if (selectedItems.has(productId)) {
-                ctaButton.innerHTML = '<i class="ph ph-check"></i> Selected';
-            }
-        });
-        
-        // Initialize cart
-        updateCart();
-    }
-
-    function updateCart() {
-        const count = selectedItems.size;
-        cartCount.textContent = count;
-        
-        // Save to localStorage
-        localStorage.setItem('cartItems', JSON.stringify([...selectedItems]));
-        
-        // Update nav badge count
-        updateNavBadge(count);
-        
-        // Show/hide cart widget based on selection
-        if (count > 0) {
-            cartWidget.style.display = 'block';
-            cartWidget.offsetHeight; // Trigger reflow
-            cartWidget.classList.add('visible');
-        } else {
-            cartWidget.classList.remove('visible');
-            setTimeout(() => {
-                if (selectedItems.size === 0) {
-                    cartWidget.style.display = 'none';
-                }
-            }, 300);
-        }
-        
-        // Calculate total price
-        let total = 0;
-        
-        // Update cart items
-        cartItems.innerHTML = '';
-        selectedItems.forEach(productId => {
-            // Find the offering in the OFFERINGS array
-            const offering = OFFERINGS.find(o => o.id === productId);
-            if (offering) {
-                const itemElement = document.createElement('div');
-                itemElement.className = 'cart-item';
-                
-                // Format price with commas for thousands
-                const formattedPrice = new Intl.NumberFormat('en-IN', {
-                    style: 'currency',
-                    currency: 'INR',
-                    maximumFractionDigits: 0
-                }).format(offering.price);
-                
-                itemElement.innerHTML = `
-                    <span class="item-name">${offering.title}</span>
-                    <span class="item-price">${formattedPrice}</span>
-                `;
-                cartItems.appendChild(itemElement);
-                
-                total += offering.price;
-            }
-        });
-        
-        // Format total with commas for thousands
-        const formattedTotal = new Intl.NumberFormat('en-IN', {
-            style: 'currency',
-            currency: 'INR',
-            maximumFractionDigits: 0
-        }).format(total);
-        
-        // Update total display
-        totalPrice.textContent = formattedTotal;
-        totalAmount.textContent = formattedTotal;
-    }
-
-    function clearCart() {
-        selectedItems.clear();
-        
-        // Deselect all offering cards
-        document.querySelectorAll('.offering-card').forEach(card => {
-            const ctaButton = card.querySelector('.offering-cta');
-            if (ctaButton) {
-                ctaButton.innerHTML = '<i class="ph ph-shopping-cart-simple"></i> Add to Cart';
-            }
-        });
-        
-        updateCart();
-    }
-
-    // Function to update the nav badge
-    function updateNavBadge(count) {
-        // Update all instances of the offerings nav badge (in case there are multiple)
-        const navBadges = document.querySelectorAll('.offerings-badge');
-        navBadges.forEach(badge => {
-            if (count > 0) {
-                badge.textContent = count;
-                badge.style.display = 'flex';
-            } else {
-                badge.style.display = 'none';
-            }
-        });
-    }
-
+    // Offering-specific functionality
+    const offeringCardsContainer = document.querySelector('.offering-cards-container');
+    
+    // Offering icons
+    const offeringIcons = {
+        'for-students': 'ph-student',
+        'for-early-professionals': 'ph-briefcase',
+        'for-early-founders': 'ph-rocket-launch',
+        'for-businesses': 'ph-buildings'
+    };
+    
+    // Define which offering is popular
+    const popularOffering = 'for-early-professionals';
+    
+    // Original prices for display
+    const originalPrices = {
+        'for-students': '₹999',
+        'for-early-professionals': '₹2999',
+        'for-early-founders': '₹10,999',
+        'for-businesses': '₹24,999'
+    };
+    
     // Handle image loading errors
     document.addEventListener('error', function(e) {
         const target = e.target;
@@ -153,146 +35,120 @@ document.addEventListener('DOMContentLoaded', function() {
             target.classList.add('placeholder-img');
         }
     }, true); // Use capture to catch the error before it bubbles
-
-    // Listen for product added/removed events
-    document.addEventListener('product:added', function(e) {
-        const productId = e.detail.productId;
-        selectedItems.add(productId);
-        updateCart();
-        
-        // Make sure the offering card button is visually selected
-        const offeringCard = document.querySelector(`.offering-card[data-id="${productId}"]`);
-        if (offeringCard) {
-            const ctaButton = offeringCard.querySelector('.offering-cta');
-            if (ctaButton) {
-                ctaButton.innerHTML = '<i class="ph ph-check"></i> Selected';
-            }
-        }
-    });
-
-    document.addEventListener('product:removed', function(e) {
-        const productId = e.detail.productId;
-        selectedItems.delete(productId);
-        updateCart();
-        
-        // Make sure the offering card button is visually unselected
-        const offeringCard = document.querySelector(`.offering-card[data-id="${productId}"]`);
-        if (offeringCard) {
-            const ctaButton = offeringCard.querySelector('.offering-cta');
-            if (ctaButton) {
-                ctaButton.innerHTML = '<i class="ph ph-shopping-cart-simple"></i> Add to Cart';
-            }
-        }
-    });
-
-    expandCart.addEventListener('click', function() {
-        const isExpanded = cartDetails.classList.contains('expanded');
-        cartDetails.classList.toggle('expanded');
-        this.classList.toggle('expanded');
-        
-        // Always use Phosphor Icons for consistency
-        if (isExpanded) {
-            this.querySelector('i').className = 'ph ph-caret-down';
-        } else {
-            this.querySelector('i').className = 'ph ph-caret-up';
-        }
-    });
-
-    payButton.addEventListener('click', function() {
-        console.log('Pay button clicked');
-        if (!isEmailMode) {
-            payContainer.classList.add('show-email');
-            isEmailMode = true;
-            setTimeout(() => {
-                emailInput.focus();
-            }, 300);
-        }
-    });
-
-    // Handle back button click
-    const backButton = document.querySelector('.back-button');
-    if (backButton) {
-        backButton.addEventListener('click', function() {
-            console.log('Back button clicked');
-            payContainer.classList.remove('show-email');
-            isEmailMode = false;
-        });
-    }
-
-    function handleEmailSubmit(e) {
-        e && e.preventDefault();
-        console.log('Handling email submit');
-        const email = emailInput.value.trim();
-        
-        if (email && isValidEmail(email)) {
-            console.log('Email submitted:', email);
-            payContainer.classList.remove('show-email');
-            isEmailMode = false;
-            emailInput.value = '';
+    
+    // Fetch offerings data
+    fetch('/static/configurations/offerings.json')
+        .then(response => response.json())
+        .then(data => {
+            const offerings = data.offerings;
             
-            // Show thank you state first
-            cartWidget.classList.add('thank-you-state');
+            // Create offering cards for all offerings
+            offerings.forEach(offering => {
+                const offeringCard = document.createElement('div');
+                offeringCard.className = 'offering-card';
+                offeringCard.dataset.id = offering.id;
+                
+                // Format price with comma for thousands
+                const formattedPrice = new Intl.NumberFormat('en-IN', {
+                    style: 'currency',
+                    currency: 'INR',
+                    maximumFractionDigits: 0
+                }).format(offering.price);
+                
+                // Determine if slots are limited
+                const slotsClass = offering.slots_limited ? 'offering-slots limited' : 'offering-slots';
+                
+                // Create benefits list HTML
+                let benefitsHTML = '';
+                if (offering.benefits && offering.benefits.length > 0) {
+                    benefitsHTML = '<div class="what-you-get"><h4>What You Get:</h4><ul class="benefits-list">';
+                    offering.benefits.forEach(benefit => {
+                        benefitsHTML += `<li><i class="ph ph-check-circle"></i>${benefit}</li>`;
+                    });
+                    benefitsHTML += '</ul></div>';
+                }
+                
+                // Add popular tag if marked as popular
+                const popularTag = offering.id === popularOffering ? '<div class="popular-tag">Popular</div>' : '';
+                
+                offeringCard.innerHTML = `
+                    ${popularTag}
+                    <div class="offering-card-header">
+                        <div class="offering-card-icon">
+                            <i class="ph ${offeringIcons[offering.id] || 'ph-star'}"></i>
+                        </div>
+                        <h3>${offering.title}</h3>
+                    </div>
+                    <div class="offering-card-content">
+                        <p>${offering.description}</p>
+                        ${benefitsHTML}
+                        <div class="offering-card-meta">
+                            <div class="slots-container">
+                                <span class="${slotsClass}">
+                                    <i class="ph ph-user-circle"></i>${offering.slots_left} slots left this month
+                                </span>
+                            </div>
+                            <div class="price-container">
+                                <span class="original-price">${originalPrices[offering.id] || formattedPrice}</span>
+                                <span class="offering-price">${formattedPrice}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="offering-card-footer">
+                        <button class="offering-cta" data-product="${offering.id}">
+                            <i class="ph ph-shopping-cart-simple"></i> Add to Cart
+                        </button>
+                        <button class="buy-now-btn" data-product="${offering.id}">
+                            <i class="ph ph-lightning"></i> Buy Now
+                        </button>
+                    </div>
+                `;
+                
+                offeringCardsContainer.appendChild(offeringCard);
+            });
             
-            // Clear cart items but maintain visibility
-            selectedItems.clear();
-            document.querySelectorAll('.offering-card').forEach(card => {
-                const ctaButton = card.querySelector('.offering-cta');
-                if (ctaButton) {
-                    ctaButton.innerHTML = '<i class="ph ph-shopping-cart-simple"></i> Add to Cart';
+            // Set up event listeners for all offering cards
+            document.querySelectorAll('.offering-cta').forEach(button => {
+                button.addEventListener('click', function() {
+                    const productId = this.dataset.product;
+                    
+                    // Get cart items from localStorage
+                    const cartItems = new Set(JSON.parse(localStorage.getItem('cartItems')) || []);
+                    
+                    // Toggle selected state
+                    if (cartItems.has(productId)) {
+                        // Trigger product:removed event
+                        const event = new CustomEvent('product:removed', {
+                            detail: { productId }
+                        });
+                        document.dispatchEvent(event);
+                    } else {
+                        // Trigger product:added event
+                        const event = new CustomEvent('product:added', {
+                            detail: { productId }
+                        });
+                        document.dispatchEvent(event);
+                    }
+                });
+                
+                // Set initial state based on localStorage
+                const productId = button.dataset.product;
+                const cartItems = new Set(JSON.parse(localStorage.getItem('cartItems')) || []);
+                if (cartItems.has(productId)) {
+                    button.innerHTML = '<i class="ph ph-check"></i> Selected';
                 }
             });
             
-            // Clear localStorage cart
-            localStorage.removeItem('cartItems');
-            // Update nav badge
-            updateNavBadge(0);
-        } else {
-            emailInput.reportValidity();
-        }
-    }
-
-    submitEmail.addEventListener('click', handleEmailSubmit);
-    
-    emailInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            handleEmailSubmit(e);
-        }
-    });
-
-    closeBanner.addEventListener('click', function() {
-        console.log('Close banner clicked');
-        
-        // Remove visible class first to start fade out
-        cartWidget.classList.remove('visible');
-        
-        // Wait for fade out, then remove thank you state and hide
-        setTimeout(() => {
-            cartWidget.classList.remove('thank-you-state');
-            cartWidget.style.display = 'none';
-        }, 300);
-        
-        // Clear cart when closing thank you banner
-        clearCart();
-    });
-
-    function isValidEmail(email) {
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    }
-
-    // Mark selected products based on localStorage data when page loads
-    if (selectedItems.size > 0) {
-        document.querySelectorAll('.offering-card').forEach(card => {
-            const productId = card.dataset.id;
-            if (selectedItems.has(productId)) {
-                const ctaButton = card.querySelector('.offering-cta');
-                if (ctaButton) {
-                    ctaButton.innerHTML = '<i class="ph ph-check"></i> Selected';
-                }
-            }
+            // Set up Buy Now buttons (will be implemented later)
+            document.querySelectorAll('.buy-now-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const productId = this.dataset.product;
+                    console.log('Buy Now clicked for product:', productId);
+                    // Functionality will be added later
+                });
+            });
+        })
+        .catch(error => {
+            console.error('Error loading offerings configuration:', error);
         });
-    }
-
-    // Initialize cart state
-    updateCart();
-    console.log('Cart initialized');
 }); 

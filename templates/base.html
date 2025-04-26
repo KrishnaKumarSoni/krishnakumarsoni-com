@@ -81,6 +81,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bongo.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/buttons.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/cart.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/drawer.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/products.css') }}">
     <!-- Page-specific styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
@@ -325,5 +326,10 @@
     </script>
 
     {% block footer_scripts %}{% endblock %}
+    
+    <!-- Drawer Component -->
+    {% include "components/drawer.html" %}
+    
+    <script src="{{ url_for('static', filename='js/drawer.js') }}"></script>
 </body>
 </html> 
