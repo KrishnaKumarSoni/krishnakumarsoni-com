@@ -1,9 +1,11 @@
 from flask import Blueprint, request, jsonify, make_response
 from twilio_service import send_otp, verify_otp, resend_otp
-from firebase_service import save_verification_data
+from firebase_service import save_verification_data as save_general_data
+from firebase_otp import save_verification_data as save_otp_data, check_user_exists
 import logging
 import datetime
 import threading
+import pytz  # For timezone handling
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -72,8 +74,9 @@ def verify_otp_route():
     # Extract browser data if provided
     browser_data = data.get('browser_data', {})
     
-    # Add verification time to the browser data for debugging
-    browser_data['verification_time'] = datetime.datetime.now().isoformat()
+    # Add verification time to the browser data for debugging (using UTC)
+    now_utc = datetime.datetime.now(pytz.UTC)
+    browser_data['verification_time'] = now_utc.isoformat()
     
     # Log the verification time
     logger.info(f"OTP verified at {browser_data['verification_time']} for {formatted_phone}")
@@ -87,13 +90,22 @@ def verify_otp_route():
     def save_data_async():
         nonlocal firebase_success
         try:
+            # Set a lower timeout for Vercel environment
+            firebase_timeout = 3.0  # Reduced from 5s to 3s for faster response
+            
             # First try to save with the OTP-specific function
-            from firebase_otp import save_verification_data as save_otp_data
-            otp_success = save_otp_data(formatted_phone, browser_data)
+            try:
+                otp_success = save_otp_data(formatted_phone, browser_data)
+            except Exception as otp_error:
+                logger.warning(f"Error in OTP data save: {str(otp_error)}")
+                otp_success = False
             
             # Also save with the general firebase service function as backup
-            from firebase_service import save_verification_data as save_general_data
-            general_success = save_general_data(formatted_phone, browser_data)
+            try:
+                general_success = save_general_data(formatted_phone, browser_data)
+            except Exception as general_error:
+                logger.warning(f"Error in general data save: {str(general_error)}")
+                general_success = False
             
             firebase_success = otp_success or general_success
             
@@ -103,19 +115,19 @@ def verify_otp_route():
                 logger.info(f"Firebase verification data saved successfully for {formatted_phone}")
                 
         except Exception as e:
-            logger.error(f"Error saving verification data: {str(e)}")
+            logger.error(f"Error in save_data_async: {str(e)}")
         finally:
             # Signal that the verification has been attempted (success or failure)
             verification_complete_event.set()
     
-    # Start a thread to handle Firebase operations asynchronously
+    # Start a thread to handle Firebase operations asynchronously 
     save_thread = threading.Thread(target=save_data_async)
     save_thread.daemon = True  # Make it a daemon thread so it doesn't block app shutdown
     save_thread.start()
     
-    # Wait for a short time for the Firebase operation to complete (max 5 seconds)
-    # This helps ensure the data is actually saved without making the user wait too long
-    verification_complete = verification_complete_event.wait(timeout=5.0)
+    # Wait for a short time for the Firebase operation to complete
+    # Reduced timeout in serverless environment to prevent 504 errors
+    verification_complete = verification_complete_event.wait(timeout=3.0)
     
     if verification_complete:
         if firebase_success:

@@ -479,6 +479,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
                 
+                const paymentQrCode = document.getElementById('payment-qr-code');
+                const paymentQrContainer = document.getElementById('payment-qr-container');
+                const loadingIndicator = paymentQrContainer.querySelector('.qr-loading');
+                
+                // Show loading state
+                if (paymentQrCode) paymentQrCode.classList.add('hidden');
+                if (loadingIndicator) loadingIndicator.style.display = 'flex';
+                
                 // Get the actual amount
                 const amount = getCartAmount();
                 console.log("Cart amount for QR generation:", amount);
@@ -510,15 +518,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
                 
+                // Hide loading state
+                if (loadingIndicator) loadingIndicator.style.display = 'none';
+                
                 if (response.status === 'success') {
                     // Set QR code image
                     if (paymentQrCode) {
                         console.log("QR code data length:", response.qr_code.length);
                         paymentQrCode.src = response.qr_code;
+                        paymentQrCode.classList.remove('hidden');
+                        
                         paymentQrCode.onerror = function() {
                             console.error("Failed to load QR code image");
-                            // Reset to placeholder if loading fails
-                            paymentQrCode.src = '/static/images/qr-placeholder.png';
+                            paymentQrCode.classList.add('hidden');
+                            if (loadingIndicator) {
+                                loadingIndicator.style.display = 'flex';
+                                loadingIndicator.querySelector('span').textContent = 'Failed to load QR code';
+                            }
                         };
                     }
                     
@@ -556,16 +572,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     // Handle error
                     console.error("Failed to generate QR code:", response);
-                    alert(response.message || 'Failed to generate payment QR code');
                     
-                    // Use placeholder image if available
+                    if (loadingIndicator) {
+                        loadingIndicator.style.display = 'flex';
+                        loadingIndicator.querySelector('span').textContent = response.message || 'Failed to generate QR code';
+                    }
+                    
                     if (paymentQrCode) {
-                        paymentQrCode.src = localStorage.getItem('qrPlaceholder') || '/static/images/qr-placeholder.png';
+                        paymentQrCode.classList.add('hidden');
                     }
                 }
             } catch (error) {
                 console.error("Error in showPaymentStepImpl:", error);
-                alert('An error occurred while preparing payment information');
+                const loadingIndicator = document.querySelector('.qr-loading');
+                if (loadingIndicator) {
+                    loadingIndicator.style.display = 'flex';
+                    loadingIndicator.querySelector('span').textContent = 'Error generating QR code';
+                }
+                
+                const paymentQrCode = document.getElementById('payment-qr-code');
+                if (paymentQrCode) {
+                    paymentQrCode.classList.add('hidden');
+                }
             }
         }
         
@@ -842,8 +870,19 @@ document.addEventListener('DOMContentLoaded', function() {
         // Continue button (after verification success)
         if (continueBtn) {
             continueBtn.addEventListener('click', function() {
+                console.log("Continue button clicked, showing payment step");
+                
+                // Hide success step
+                successStep.classList.add('hidden');
+                
                 // Show payment step
-                showPaymentStepImpl();
+                paymentStep.classList.remove('hidden');
+                
+                // Force a small delay before loading QR to ensure proper rendering
+                setTimeout(() => {
+                    // Directly call the implementation
+                    showPaymentStepImpl();
+                }, 100);
             });
         }
         

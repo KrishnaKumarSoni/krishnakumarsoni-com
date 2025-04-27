@@ -46,6 +46,7 @@ from firebase_admin import credentials, firestore
 import logging
 import datetime
 from dotenv import load_dotenv
+import pytz  # For timezone handling
 
 # Load environment variables
 load_dotenv()
@@ -152,20 +153,18 @@ def save_verification_data(phone_number, browser_data=None):
             logger.error("Failed to get Firestore DB for saving verification data")
             return False
         
-        # Log the current time for debugging
-        current_time = datetime.datetime.now().isoformat()
+        # Use UTC time to ensure consistency across environments
+        now_utc = datetime.datetime.now(pytz.UTC)
+        current_time = now_utc.isoformat()
         logger.info(f"Firebase service saving verification at {current_time} for phone: {phone_number}")
         
-        # Use explicit timestamp instead of SERVER_TIMESTAMP
-        now = datetime.datetime.now()
-        
-        # Create a document with verification timestamp and data
+        # Create a document with verification timestamp and data (using UTC)
         verification_data = {
             'phone_number': phone_number,
-            'verified_at': now,
+            'verified_at': now_utc,
             'browser_data': browser_data or {},
-            'updated_at': now,
-            'last_verified_at': now
+            'updated_at': now_utc,
+            'last_verified_at': now_utc
         }
         
         # Format phone number for document ID to ensure consistency
@@ -179,7 +178,10 @@ def save_verification_data(phone_number, browser_data=None):
         # Verify the update was successful by reading back
         try:
             saved_data = db.collection('verified_phones').document(doc_id).get().to_dict()
-            logger.info(f"Verification data saved successfully: {saved_data}")
+            if saved_data:
+                logger.info(f"Verification data saved successfully to 'verified_phones' collection")
+            else:
+                logger.warning(f"Saved data returned None from 'verified_phones' collection")
         except Exception as read_error:
             logger.warning(f"Could not verify saved data: {str(read_error)}")
         
