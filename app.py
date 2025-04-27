@@ -21,6 +21,23 @@ app.config.update(
     SITE_URL='https://krishnakumarsoni.com'  # Update with your actual domain
 )
 
+# Initialize Firebase at application startup, only once
+# This is a singleton pattern where we initialize Firebase once globally
+# and reuse the same instance throughout the application lifecycle.
+# The firebase_service.py module maintains this instance and provides
+# accessor functions to interact with Firebase.
+#
+# Benefits:
+# - Single connection point to Firebase
+# - Authentication happens only once
+# - Reduced startup time for routes and API endpoints
+# - Consistent state across the application
+firebase_app = init_firebase()
+if firebase_app:
+    print("Firebase initialized successfully at app startup")
+else:
+    print("Failed to initialize Firebase at app startup")
+
 def get_markdown_content(directory, filename='index.md'):
     """Get content from markdown file"""
     file_path = app.config['CONTENT_DIR'] / directory / filename

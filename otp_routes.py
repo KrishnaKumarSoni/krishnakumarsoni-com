@@ -3,6 +3,7 @@ from twilio_service import send_otp, verify_otp, resend_otp
 from firebase_service import save_verification_data
 import logging
 import datetime
+import threading
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -71,14 +72,58 @@ def verify_otp_route():
     # Extract browser data if provided
     browser_data = data.get('browser_data', {})
     
-    # Save verification data to Firebase
-    try:
-        success = save_verification_data(formatted_phone, browser_data)
-        
-        if not success:
-            logger.warning(f"Failed to save verification data for {formatted_phone}")
-    except Exception as e:
-        logger.error(f"Error saving verification data: {str(e)}")
+    # Add verification time to the browser data for debugging
+    browser_data['verification_time'] = datetime.datetime.now().isoformat()
+    
+    # Log the verification time
+    logger.info(f"OTP verified at {browser_data['verification_time']} for {formatted_phone}")
+    
+    # Create a flag to track Firebase operation success
+    firebase_success = False
+    
+    # Save verification data to Firebase in a non-blocking way - but with an event to track completion
+    verification_complete_event = threading.Event()
+    
+    def save_data_async():
+        nonlocal firebase_success
+        try:
+            # First try to save with the OTP-specific function
+            from firebase_otp import save_verification_data as save_otp_data
+            otp_success = save_otp_data(formatted_phone, browser_data)
+            
+            # Also save with the general firebase service function as backup
+            from firebase_service import save_verification_data as save_general_data
+            general_success = save_general_data(formatted_phone, browser_data)
+            
+            firebase_success = otp_success or general_success
+            
+            if not firebase_success:
+                logger.warning(f"Both Firebase save operations failed for {formatted_phone}")
+            else:
+                logger.info(f"Firebase verification data saved successfully for {formatted_phone}")
+                
+        except Exception as e:
+            logger.error(f"Error saving verification data: {str(e)}")
+        finally:
+            # Signal that the verification has been attempted (success or failure)
+            verification_complete_event.set()
+    
+    # Start a thread to handle Firebase operations asynchronously
+    save_thread = threading.Thread(target=save_data_async)
+    save_thread.daemon = True  # Make it a daemon thread so it doesn't block app shutdown
+    save_thread.start()
+    
+    # Wait for a short time for the Firebase operation to complete (max 5 seconds)
+    # This helps ensure the data is actually saved without making the user wait too long
+    verification_complete = verification_complete_event.wait(timeout=5.0)
+    
+    if verification_complete:
+        if firebase_success:
+            logger.info(f"Firebase verification completed successfully for {formatted_phone}")
+        else:
+            logger.warning(f"Firebase verification completed but reported failure for {formatted_phone}")
+    else:
+        logger.warning(f"Firebase verification timed out for {formatted_phone} - continuing with response")
     
     # Create response with verification cookie
     resp = make_response(jsonify(response))

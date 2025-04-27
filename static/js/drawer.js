@@ -329,17 +329,43 @@ document.addEventListener('DOMContentLoaded', function() {
         // Helper functions for API calls
         async function callApi(endpoint, data) {
             try {
+                // Set a timeout for the fetch request
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout
+                
                 const response = await fetch(`/api/${endpoint}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(data)
+                    body: JSON.stringify(data),
+                    signal: controller.signal
                 });
+                
+                // Clear the timeout
+                clearTimeout(timeoutId);
+                
+                // Handle non-200 responses
+                if (!response.ok) {
+                    console.error(`${endpoint} API error:`, response.status, response.statusText);
+                    return {
+                        status: 'error',
+                        message: `Server error (${response.status}). Please try again later.`
+                    };
+                }
                 
                 return await response.json();
             } catch (error) {
                 console.error(`Error calling ${endpoint} API:`, error);
+                
+                // Check if it's an abort error (timeout)
+                if (error.name === 'AbortError') {
+                    return {
+                        status: 'error',
+                        message: 'Request timed out. The server is taking too long to respond.'
+                    };
+                }
+                
                 return {
                     status: 'error',
                     message: 'Network error. Please try again.'
@@ -355,11 +381,76 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         async function verifyOtpFromPhone(phoneNumber, countryCode, otp) {
-            return await callApi('otp/verify', {
-                phone_number: phoneNumber,
-                country_code: countryCode,
-                otp: otp
-            });
+            console.log(`Verifying OTP: ${otp} for phone: ${countryCode}${phoneNumber}`);
+            
+            // Get the browser fingerprint for verification
+            const fingerprint = getBrowserFingerprint();
+            
+            // Add current timestamp to request
+            fingerprint.request_time = new Date().toISOString();
+            
+            // Add some retry logic for robustness
+            let retryCount = 0;
+            const maxRetries = 2;
+            
+            while (retryCount <= maxRetries) {
+                try {
+                    const response = await callApi('otp/verify', {
+                        phone_number: phoneNumber,
+                        country_code: countryCode,
+                        otp: otp,
+                        browser_data: fingerprint
+                    });
+                    
+                    console.log("OTP verification response:", response);
+                    
+                    // Success case - no need to retry
+                    if (response.status === 'success') {
+                        return response;
+                    }
+                    
+                    // If we got a response but it's an error, retry only for certain errors
+                    if (response.status === 'error') {
+                        if (response.message && (
+                            response.message.includes('timeout') || 
+                            response.message.includes('network error') ||
+                            response.message.includes('taking too long')
+                        )) {
+                            console.warn(`Retry ${retryCount + 1}/${maxRetries} for OTP verification due to: ${response.message}`);
+                            retryCount++;
+                            
+                            // Wait a bit before retrying
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                            continue;
+                        }
+                        
+                        // For other error types, don't retry
+                        return response;
+                    }
+                    
+                    // Any other response just return it
+                    return response;
+                } catch (error) {
+                    console.error("Exception during OTP verification:", error);
+                    
+                    retryCount++;
+                    if (retryCount > maxRetries) {
+                        return {
+                            status: 'error',
+                            message: 'Maximum retry attempts exceeded. Please try again later.'
+                        };
+                    }
+                    
+                    // Wait a bit before retrying
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+            }
+            
+            // This should never happen due to the returns in the loop
+            return {
+                status: 'error',
+                message: 'Unexpected error during verification. Please try again.'
+            };
         }
         
         async function resendOtpToPhone(phoneNumber, countryCode) {

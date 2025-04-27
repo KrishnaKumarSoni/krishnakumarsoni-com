@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from qrcode_service import generate_upi_qr_code
-from firebase_service import check_user_exists
+from firebase_otp import check_user_exists
 import logging
 
 # Configure logging
