@@ -4,6 +4,9 @@ import yaml
 import markdown
 import os
 from blog_routes import init_blog_routes
+from otp_routes import init_otp_routes
+from payment_routes import init_payment_routes
+from firebase_service import init_firebase, get_firestore_db
 from datetime import datetime
 import xml.etree.ElementTree as ET
 import re
@@ -211,8 +214,61 @@ Sitemap: {app.config['SITE_URL']}/sitemap.xml
 """
     return Response(robots_content, mimetype='text/plain')
 
+@app.route('/api/test-firebase')
+def test_firebase():
+    """Test Firebase connection and return status"""
+    try:
+        # Try to initialize Firebase
+        app = init_firebase()
+        
+        if not app:
+            return jsonify({
+                "status": "error",
+                "message": "Failed to initialize Firebase app"
+            }), 500
+        
+        # Try to get a Firestore DB reference
+        db = get_firestore_db()
+        
+        if not db:
+            return jsonify({
+                "status": "error",
+                "message": "Failed to get Firestore DB"
+            }), 500
+        
+        # Try a simple query to confirm connectivity
+        try:
+            # Try to get a reference to a collection
+            users_ref = db.collection('users')
+            # Try to get a single document
+            query = users_ref.limit(1).get()
+            doc_exists = len(list(query)) > 0
+            
+            return jsonify({
+                "status": "success",
+                "message": "Firebase connection successful",
+                "has_documents": doc_exists
+            })
+        except Exception as e:
+            return jsonify({
+                "status": "error",
+                "message": f"Firebase query failed: {str(e)}"
+            }), 500
+            
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": f"Firebase test failed: {str(e)}"
+        }), 500
+
 # Initialize blog routes
 init_blog_routes(app)
+
+# Initialize OTP verification routes
+init_otp_routes(app)
+
+# Initialize payment routes
+init_payment_routes(app)
 
 # Error handlers
 @app.errorhandler(404)

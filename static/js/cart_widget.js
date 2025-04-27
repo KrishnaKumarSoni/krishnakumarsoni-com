@@ -29,6 +29,8 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             OFFERINGS = data.offerings;
+            // Store offerings data in localStorage for access by other components
+            localStorage.setItem('offeringsData', JSON.stringify(OFFERINGS));
             updateInitialState();
         })
         .catch(error => {

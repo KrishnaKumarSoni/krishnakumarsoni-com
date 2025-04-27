@@ -4,11 +4,62 @@ document.addEventListener('DOMContentLoaded', function() {
     const drawer = document.querySelector('.drawer');
     const drawerClose = document.querySelector('.drawer-close');
     
+    // Verification flow elements
+    const phoneStep = document.getElementById('phone-step');
+    const otpStep = document.getElementById('otp-step');
+    const successStep = document.getElementById('success-step');
+    const paymentStep = document.getElementById('payment-step');
+    
+    // Global timer variables
+    let qrRefreshInterval = null;
+    let qrRefreshSeconds = 60;
+    const qrCountdown = document.getElementById('qr-countdown');
+    
+    // Global function to clear QR timer
+    function clearGlobalQrTimer() {
+        console.log("Clearing global QR timer");
+        if (qrRefreshInterval) {
+            clearInterval(qrRefreshInterval);
+            qrRefreshInterval = null;
+        }
+        qrRefreshSeconds = 60;
+        if (qrCountdown) {
+            qrCountdown.textContent = qrRefreshSeconds;
+        }
+    }
+    
+    // Function to check if user is already verified
+    function checkVerificationStatus() {
+        if (isUserVerified()) {
+            // Skip to payment step directly
+            showPaymentStep();
+        } else {
+            // Start with phone verification
+            resetVerificationFlow();
+        }
+    }
+    
+    // Function to check if user is verified from localStorage
+    function isUserVerified() {
+        return localStorage.getItem('phoneVerified') === 'true';
+    }
+    
+    // Reset verification flow to initial state
+    function resetVerificationFlow() {
+        if (phoneStep) phoneStep.classList.remove('hidden');
+        if (otpStep) otpStep.classList.add('hidden');
+        if (successStep) successStep.classList.add('hidden');
+        if (paymentStep) paymentStep.classList.add('hidden');
+    }
+    
     // Function to open drawer
     function openDrawer() {
         drawer.classList.add('open');
         drawerOverlay.classList.add('open');
         document.body.style.overflow = 'hidden'; // Prevent scrolling when drawer is open
+        
+        // Check if user is already verified
+        checkVerificationStatus();
     }
     
     // Function to close drawer
@@ -16,6 +67,9 @@ document.addEventListener('DOMContentLoaded', function() {
         drawer.classList.remove('open');
         drawerOverlay.classList.remove('open');
         document.body.style.overflow = ''; // Restore scrolling
+        
+        // Clear QR refresh timer when drawer is closed
+        clearGlobalQrTimer();
     }
     
     // Handle click on close button
@@ -35,14 +89,76 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    // Start QR refresh timer function (global)
+    function startGlobalQrTimer() {
+        // First clear any existing timer
+        clearGlobalQrTimer();
+        
+        // Reset timer
+        qrRefreshSeconds = 60;
+        if (qrCountdown) {
+            qrCountdown.textContent = qrRefreshSeconds;
+        }
+        
+        // Hide refresh animation if it's showing
+        const refreshAnimation = document.querySelector('.refresh-animation');
+        if (refreshAnimation) {
+            refreshAnimation.classList.remove('active');
+        }
+        
+        // Start new interval
+        qrRefreshInterval = setInterval(function() {
+            qrRefreshSeconds--;
+            
+            if (qrCountdown) {
+                qrCountdown.textContent = qrRefreshSeconds;
+            }
+            
+            if (qrRefreshSeconds <= 0) {
+                clearInterval(qrRefreshInterval);
+                qrRefreshInterval = null;
+                
+                // Show refresh animation
+                if (refreshAnimation) {
+                    refreshAnimation.classList.add('active');
+                    
+                    // Refresh QR code after animation
+                    setTimeout(function() {
+                        // Only refresh if drawer is still open
+                        if (drawer.classList.contains('open')) {
+                            setupVerificationFlow().showPaymentStepImpl();
+                        }
+                    }, 1500);
+                } else {
+                    // No animation, refresh immediately if drawer is still open
+                    if (drawer.classList.contains('open')) {
+                        setupVerificationFlow().showPaymentStepImpl();
+                    }
+                }
+            }
+        }, 1000);
+    }
+    
     // OTP Verification Flow
     setupVerificationFlow();
     
+    // Show payment step function (simplified version for global scope)
+    async function showPaymentStep() {
+        // Only proceed if elements exist
+        if (!paymentStep) return;
+        
+        // Hide other steps
+        if (phoneStep) phoneStep.classList.add('hidden');
+        if (otpStep) otpStep.classList.add('hidden');
+        if (successStep) successStep.classList.add('hidden');
+        paymentStep.classList.remove('hidden');
+        
+        // Rest of the implementation is in setupVerificationFlow
+        setupVerificationFlow().showPaymentStepImpl();
+    }
+    
     function setupVerificationFlow() {
         // Get verification elements
-        const phoneStep = document.getElementById('phone-step');
-        const otpStep = document.getElementById('otp-step');
-        const successStep = document.getElementById('success-step');
         const sendOtpBtn = document.getElementById('send-otp-btn');
         const verifyOtpBtn = document.getElementById('verify-otp-btn');
         const resendOtpBtn = document.getElementById('resend-otp-btn');
@@ -51,6 +167,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const phoneInput = document.querySelector('.phone-input');
         const userPhoneSpan = document.querySelector('.user-phone');
         const otpInputs = document.querySelectorAll('.otp-input');
+        const paymentQrCode = document.getElementById('payment-qr-code');
+        const upiIdDisplay = document.getElementById('upi-id-display');
+        const amountValue = document.querySelector('.amount-value');
+        const upiAppBtn = document.getElementById('upi-app-btn');
         
         // Country code dropdown
         const countryToggle = document.querySelector('.country-code-toggle');
@@ -62,6 +182,46 @@ document.addEventListener('DOMContentLoaded', function() {
         let selectedCountryCode = '+91';
         let resendTimer;
         let resendSeconds = 30;
+        let currentPhoneNumber = '';
+        
+        // QR refresh timer variables
+        let currentUpiUrl = '';
+        
+        // Get cart amount from the DOM or localStorage if available
+        function getCartAmount() {
+            // First try to get total from the cart widget in the DOM
+            const totalPriceElement = document.querySelector('.total-price');
+            if (totalPriceElement) {
+                // Extract the number from the formatted price (e.g., "₹1,000.00" -> 1000)
+                const priceText = totalPriceElement.textContent.trim();
+                // Remove currency symbol, commas and convert to number
+                const amount = parseFloat(priceText.replace(/[₹,]/g, ''));
+                if (!isNaN(amount)) {
+                    return amount;
+                }
+            }
+            
+            // If DOM element is not available, try localStorage
+            const cartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
+            if (cartItems.length > 0) {
+                try {
+                    // Get offerings data to calculate total
+                    const offerings = JSON.parse(localStorage.getItem('offeringsData')) || [];
+                    if (offerings.length > 0) {
+                        // Calculate total from selected items
+                        return cartItems.reduce((total, itemId) => {
+                            const item = offerings.find(o => o.id === itemId);
+                            return total + (item ? item.price : 0);
+                        }, 0);
+                    }
+                } catch (e) {
+                    console.error('Error calculating cart amount from localStorage:', e);
+                }
+            }
+            
+            // Fallback amount if no other source is available
+            return 1000.00;
+        }
         
         // Countries list - comprehensive list with flags, country codes
         const countries = [
@@ -144,6 +304,179 @@ document.addEventListener('DOMContentLoaded', function() {
             { name: "Yemen", code: "+967", flag: "🇾🇪" },
             { name: "Zimbabwe", code: "+263", flag: "🇿🇼" }
         ];
+        
+        // Local storage function
+        function saveVerificationStatus(phoneNumber) {
+            localStorage.setItem('phoneVerified', 'true');
+            localStorage.setItem('verifiedPhone', phoneNumber);
+            localStorage.setItem('verifiedAt', new Date().toISOString());
+        }
+        
+        // Browser fingerprint for Firebase
+        function getBrowserFingerprint() {
+            return {
+                userAgent: navigator.userAgent,
+                language: navigator.language,
+                platform: navigator.platform,
+                screenWidth: window.screen.width,
+                screenHeight: window.screen.height,
+                colorDepth: window.screen.colorDepth,
+                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                timestamp: new Date().toISOString()
+            };
+        }
+        
+        // Helper functions for API calls
+        async function callApi(endpoint, data) {
+            try {
+                const response = await fetch(`/api/${endpoint}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                return await response.json();
+            } catch (error) {
+                console.error(`Error calling ${endpoint} API:`, error);
+                return {
+                    status: 'error',
+                    message: 'Network error. Please try again.'
+                };
+            }
+        }
+        
+        async function sendOtpToPhone(phoneNumber, countryCode) {
+            return await callApi('otp/send', {
+                phone_number: phoneNumber,
+                country_code: countryCode
+            });
+        }
+        
+        async function verifyOtpFromPhone(phoneNumber, countryCode, otp) {
+            return await callApi('otp/verify', {
+                phone_number: phoneNumber,
+                country_code: countryCode,
+                otp: otp
+            });
+        }
+        
+        async function resendOtpToPhone(phoneNumber, countryCode) {
+            return await callApi('otp/resend', {
+                phone_number: phoneNumber,
+                country_code: countryCode
+            });
+        }
+        
+        async function generatePaymentQR(phoneNumber, amount) {
+            console.log("Generating payment QR for:", phoneNumber, amount);
+            return await callApi('payment/generate-qr', {
+                amount: amount,
+                phone_number: phoneNumber,
+                browser_data: getBrowserFingerprint(),
+                transaction_note: "Payment for order"
+            });
+        }
+        
+        // Detailed showPaymentStep implementation
+        async function showPaymentStepImpl() {
+            try {
+                // Check if drawer is open - don't proceed if closed
+                if (!drawer.classList.contains('open')) {
+                    console.log("Drawer is closed, skipping QR refresh");
+                    return;
+                }
+                
+                // Get the actual amount
+                const amount = getCartAmount();
+                console.log("Cart amount for QR generation:", amount);
+                
+                // Format amount display
+                const formattedAmount = new Intl.NumberFormat('en-IN', { 
+                    style: 'currency', 
+                    currency: 'INR',
+                    maximumFractionDigits: 2
+                }).format(amount);
+                
+                if (amountValue) {
+                    amountValue.textContent = formattedAmount;
+                    console.log("Updated amount display:", formattedAmount);
+                }
+                
+                // Get verified phone from localStorage or use current
+                const verifiedPhone = localStorage.getItem('verifiedPhone') || `${selectedCountryCode}${currentPhoneNumber}`;
+                console.log("Using verified phone for payment:", verifiedPhone);
+                
+                // Generate QR code
+                console.log("Calling generatePaymentQR with:", verifiedPhone, amount);
+                const response = await generatePaymentQR(verifiedPhone, amount);
+                console.log("QR generation response:", response);
+                
+                // Check again if drawer is open - in case it was closed during the API call
+                if (!drawer.classList.contains('open')) {
+                    console.log("Drawer was closed during QR generation, aborting");
+                    return;
+                }
+                
+                if (response.status === 'success') {
+                    // Set QR code image
+                    if (paymentQrCode) {
+                        console.log("QR code data length:", response.qr_code.length);
+                        paymentQrCode.src = response.qr_code;
+                        paymentQrCode.onerror = function() {
+                            console.error("Failed to load QR code image");
+                            // Reset to placeholder if loading fails
+                            paymentQrCode.src = '/static/images/qr-placeholder.png';
+                        };
+                    }
+                    
+                    // Store UPI URL for the app button
+                    if (response.upi_details && response.upi_details.upi_url) {
+                        currentUpiUrl = response.upi_details.upi_url;
+                        
+                        // Setup UPI app button
+                        if (upiAppBtn) {
+                            upiAppBtn.onclick = function() {
+                                window.location.href = currentUpiUrl;
+                            };
+                        }
+                    } else if (response.upi_details && response.upi_details.upi_id) {
+                        // Construct UPI URL if not provided directly
+                        const upiId = response.upi_details.upi_id;
+                        currentUpiUrl = `upi://pay?pa=${upiId}&am=${amount}&pn=${response.upi_details.merchant_name || 'Krishna Kumar Soni'}&tn=${response.upi_details.transaction_note || 'Payment for order'}`;
+                        
+                        // Setup UPI app button
+                        if (upiAppBtn) {
+                            upiAppBtn.onclick = function() {
+                                window.location.href = currentUpiUrl;
+                            };
+                        }
+                    }
+                    
+                    // Only start timer if drawer is still open
+                    if (drawer.classList.contains('open')) {
+                        // First clear any existing timer to prevent multiple timers
+                        clearGlobalQrTimer();
+                        
+                        // Then start a new QR refresh timer
+                        startGlobalQrTimer();
+                    }
+                } else {
+                    // Handle error
+                    console.error("Failed to generate QR code:", response);
+                    alert(response.message || 'Failed to generate payment QR code');
+                    
+                    // Use placeholder image if available
+                    if (paymentQrCode) {
+                        paymentQrCode.src = localStorage.getItem('qrPlaceholder') || '/static/images/qr-placeholder.png';
+                    }
+                }
+            } catch (error) {
+                console.error("Error in showPaymentStepImpl:", error);
+                alert('An error occurred while preparing payment information');
+            }
+        }
         
         // Populate countries
         function populateCountries() {
@@ -259,7 +592,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Send OTP button
         if (sendOtpBtn) {
-            sendOtpBtn.addEventListener('click', function() {
+            sendOtpBtn.addEventListener('click', async function() {
                 const phoneNumber = phoneInput.value.trim();
                 
                 if (!phoneNumber) {
@@ -273,6 +606,26 @@ document.addEventListener('DOMContentLoaded', function() {
                     phoneInput.focus();
                     return;
                 }
+                
+                // Show loading state
+                sendOtpBtn.disabled = true;
+                sendOtpBtn.innerHTML = 'Sending... <i class="ph ph-spinner ph-spin"></i>';
+                
+                // Call API to send OTP
+                const response = await sendOtpToPhone(phoneNumber, selectedCountryCode);
+                
+                // Reset button state
+                sendOtpBtn.disabled = false;
+                sendOtpBtn.innerHTML = 'Send Code <i class="ph ph-arrow-right"></i>';
+                
+                if (response.status === 'error') {
+                    // Show error message
+                    alert(response.message || 'Failed to send OTP. Please try again.');
+                    return;
+                }
+                
+                // Store the current phone number
+                currentPhoneNumber = phoneNumber;
                 
                 // Show the OTP verification step
                 phoneStep.classList.add('hidden');
@@ -293,13 +646,36 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Verify OTP button
         if (verifyOtpBtn) {
-            verifyOtpBtn.addEventListener('click', function() {
+            verifyOtpBtn.addEventListener('click', async function() {
                 const otp = Array.from(otpInputs).map(input => input.value).join('');
                 
                 if (otp.length !== 6) {
                     // Show error - OTP is incomplete
                     return;
                 }
+                
+                // Show loading state
+                verifyOtpBtn.disabled = true;
+                verifyOtpBtn.innerHTML = 'Verifying... <i class="ph ph-spinner ph-spin"></i>';
+                
+                // Call API to verify OTP
+                const response = await verifyOtpFromPhone(currentPhoneNumber, selectedCountryCode, otp);
+                
+                // Reset button state
+                verifyOtpBtn.disabled = false;
+                verifyOtpBtn.innerHTML = 'Verify <i class="ph ph-check"></i>';
+                
+                if (response.status === 'error') {
+                    // Show error message
+                    alert(response.message || 'Failed to verify OTP. Please try again.');
+                    return;
+                }
+                
+                // Format full phone number
+                const formattedPhone = `${selectedCountryCode}${currentPhoneNumber}`;
+                
+                // Save verification status in localStorage
+                saveVerificationStatus(formattedPhone);
                 
                 // Show success step
                 otpStep.classList.add('hidden');
@@ -334,8 +710,29 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Resend OTP button
         if (resendOtpBtn) {
-            resendOtpBtn.addEventListener('click', function() {
+            resendOtpBtn.addEventListener('click', async function() {
                 if (this.disabled) return;
+                
+                // Show loading state
+                this.disabled = true;
+                const originalText = this.innerHTML;
+                this.innerHTML = 'Sending... <i class="ph ph-spinner ph-spin"></i>';
+                
+                // Call API to resend OTP
+                const response = await resendOtpToPhone(currentPhoneNumber, selectedCountryCode);
+                
+                if (response.status === 'error') {
+                    // Show error message
+                    alert(response.message || 'Failed to resend OTP. Please try again.');
+                    
+                    // Reset button state without starting timer
+                    this.disabled = false;
+                    this.innerHTML = originalText;
+                    return;
+                }
+                
+                // Reset button state
+                this.innerHTML = originalText;
                 
                 // Reset and start the timer
                 startResendTimer();
@@ -351,18 +748,11 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         
-        // Continue button
+        // Continue button (after verification success)
         if (continueBtn) {
             continueBtn.addEventListener('click', function() {
-                // Reset the verification flow to initial state
-                successStep.classList.add('hidden');
-                phoneStep.classList.remove('hidden');
-                
-                // Clear the phone input
-                phoneInput.value = '';
-                
-                // Close the drawer
-                closeDrawer();
+                // Show payment step
+                showPaymentStepImpl();
             });
         }
         
@@ -404,6 +794,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 timerElement.textContent = `(${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')})`;
             }
         }
+        
+        // Return object with internal functions that need to be accessed from outside
+        return {
+            showPaymentStepImpl,
+            clearQrRefreshTimer: clearGlobalQrTimer
+        };
     }
     
     // Export drawer functions for external use

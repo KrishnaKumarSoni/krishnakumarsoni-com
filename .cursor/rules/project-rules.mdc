@@ -1,0 +1,11 @@
+---
+description: This rule is helpful for backend development or anything related to business logic and data.
+globs: 
+alwaysApply: false
+---
+our project routes are in [app.py](mdc:app.py) and the backend services are in ./app. 
+
+when you are working on the backend, add new services in ./app folder and cleanly reference in app.py file
+
+any new change should not break what already exists in the backend
+

@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Offering-specific functionality
     const offeringCardsContainer = document.querySelector('.offering-cards-container');
-    
+
     // Offering icons
     const offeringIcons = {
         'for-students': 'ph-student',
@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Define which offering is popular
     const popularOffering = 'for-early-professionals';
-    
+                
     // Original prices for display
     const originalPrices = {
         'for-students': '₹999',
@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
         'for-early-founders': '₹10,999',
         'for-businesses': '₹24,999'
     };
-    
+
     // Handle image loading errors
     document.addEventListener('error', function(e) {
         const target = e.target;
@@ -35,13 +35,13 @@ document.addEventListener('DOMContentLoaded', function() {
             target.classList.add('placeholder-img');
         }
     }, true); // Use capture to catch the error before it bubbles
-    
+
     // Fetch offerings data
     fetch('/static/configurations/offerings.json')
         .then(response => response.json())
         .then(data => {
             const offerings = data.offerings;
-            
+        
             // Create offering cards for all offerings
             offerings.forEach(offering => {
                 const offeringCard = document.createElement('div');
@@ -114,7 +114,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // Get cart items from localStorage
                     const cartItems = new Set(JSON.parse(localStorage.getItem('cartItems')) || []);
-                    
+        
                     // Toggle selected state
                     if (cartItems.has(productId)) {
                         // Trigger product:removed event
@@ -122,11 +122,11 @@ document.addEventListener('DOMContentLoaded', function() {
                             detail: { productId }
                         });
                         document.dispatchEvent(event);
-                    } else {
+        } else {
                         // Trigger product:added event
                         const event = new CustomEvent('product:added', {
                             detail: { productId }
-                        });
+    });
                         document.dispatchEvent(event);
                     }
                 });
