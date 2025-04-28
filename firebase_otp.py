@@ -60,8 +60,7 @@ def check_user_exists(phone_number):
 def save_verification_data(phone_number, browser_data):
     """
     Save user verification data to Firestore.
-    If user already exists, update the last_verified_at timestamp.
-    If not, create a new document with all verification data.
+    Creates a new user document or updates existing one with verification data.
     
     Args:
         phone_number (str): User's verified phone number with country code
@@ -82,65 +81,48 @@ def save_verification_data(phone_number, browser_data):
         
         # Use UTC time to ensure consistency across environments
         now_utc = datetime.datetime.now(pytz.UTC)
-        current_time = now_utc.isoformat()
-        logger.info(f"OTP service saving verification at {current_time} for phone: {phone_number}")
         
         # Check if user document already exists
         exists, doc_ref = check_user_exists(phone_number)
         
         if exists:
-            # Update existing document with last_verified_at timestamp
-            # Use UTC timestamp instead of local time
+            # Update existing document with verification data
             update_data = {
                 'last_verified_at': now_utc,
-                'browser_data': browser_data,  # Update browser data too
+                'browser_data': browser_data,
                 'updated_at': now_utc
             }
             
-            logger.info(f"Updating existing document with UTC timestamp: {now_utc.isoformat()}")
             doc_ref.update(update_data)
-            
-            # Verify the update was successful by reading back the document
-            try:
-                updated_doc = doc_ref.get().to_dict()
-                if updated_doc:
-                    logger.info(f"Updated document in 'users' collection successfully")
-                else:
-                    logger.warning(f"Updated document check returned None")
-            except Exception as read_error:
-                logger.warning(f"Could not verify document update: {str(read_error)}")
-            
-            logger.info(f"Updated verification timestamp for {phone_number}")
+            logger.info(f"Updated verification data for existing user: {phone_number}")
         else:
-            # Create a new document with all verification data
-            verification_data = {
+            # Create a new user document with verification data
+            user_data = {
                 'phone_number': phone_number,
                 'browser_data': browser_data,
                 'created_at': now_utc,
                 'last_verified_at': now_utc,
                 'verified_at': now_utc,
-                'updated_at': now_utc
+                'updated_at': now_utc,
+                'user_id': doc_id  # Using doc_id as user_id for consistency
             }
             
-            logger.info(f"Creating new document with UTC timestamp: {now_utc.isoformat()}")
-            
-            # Set the document with explicit timestamps
-            db.collection('users').document(doc_id).set(verification_data)
-            
-            # Verify the document was created by reading it back
-            try:
-                created_doc = db.collection('users').document(doc_id).get().to_dict()
-                if created_doc:
-                    logger.info(f"Created document in 'users' collection successfully")
-                else:
-                    logger.warning(f"Created document check returned None")
-            except Exception as read_error:
-                logger.warning(f"Could not verify document creation: {str(read_error)}")
-            
-            logger.info(f"Created new verification document for {phone_number}")
+            db.collection('users').document(doc_id).set(user_data)
+            logger.info(f"Created new user with verification data: {phone_number}")
         
-        return True
-        
+        # Verify the operation was successful
+        try:
+            saved_doc = db.collection('users').document(doc_id).get().to_dict()
+            if saved_doc:
+                logger.info(f"Verification data saved/updated successfully in users collection")
+                return True
+            else:
+                logger.warning(f"Saved document check returned None")
+                return False
+        except Exception as read_error:
+            logger.warning(f"Could not verify document operation: {str(read_error)}")
+            return False
+            
     except Exception as e:
         logger.error(f"Error saving verification data: {str(e)}")
         logger.error(f"Phone: {phone_number}")

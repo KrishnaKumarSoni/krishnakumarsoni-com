@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from qrcode_service import generate_upi_qr_code
 from firebase_otp import check_user_exists
+from firebase_service import save_live_transaction, update_transaction_qr_timestamp
 import logging
 
 # Configure logging
@@ -98,6 +99,21 @@ def generate_payment_qr():
         if transaction_note:
             upi_url += f"&tn={transaction_note}"
         
+        # Save live transaction data to Firebase - handles new and existing transactions
+        success, transaction_id, is_new = save_live_transaction(
+            phone_number=phone_number,
+            amount=amount,
+            browser_data=browser_data
+        )
+        
+        if not success:
+            logger.warning(f"Failed to save live transaction data for phone: {phone_number}")
+        else:
+            if is_new:
+                logger.info(f"New live transaction created with ID: {transaction_id}")
+            else:
+                logger.info(f"Reused existing transaction with ID: {transaction_id}")
+        
         return jsonify({
             "status": "success",
             "qr_code": qr_code_data,
@@ -107,7 +123,9 @@ def generate_payment_qr():
                 "amount": amount,
                 "merchant_name": merchant_name,
                 "transaction_note": transaction_note
-            }
+            },
+            "transaction_id": transaction_id if success else None,
+            "is_new_transaction": is_new if success else None
         }), 200
     except Exception as e:
         logger.error(f"Error in generate_payment_qr: {str(e)}")
@@ -116,6 +134,47 @@ def generate_payment_qr():
         return jsonify({
             "status": "error",
             "message": f"Failed to generate QR code: {str(e)}"
+        }), 500
+
+@payment_bp.route('/update-qr-timestamp', methods=['POST'])
+def update_qr_timestamp():
+    """
+    Update the last_qr_gen_at timestamp for a transaction when QR is refreshed
+    
+    Request JSON:
+    {
+        "transaction_id": "12345abcde" (required)
+    }
+    """
+    data = request.json
+    
+    if not data:
+        return jsonify({
+            "status": "error",
+            "message": "Invalid request data"
+        }), 400
+    
+    # Validate required fields
+    if 'transaction_id' not in data:
+        return jsonify({
+            "status": "error",
+            "message": "Transaction ID is required"
+        }), 400
+    
+    transaction_id = data.get('transaction_id')
+    
+    # Update timestamp in Firebase
+    success = update_transaction_qr_timestamp(transaction_id)
+    
+    if success:
+        return jsonify({
+            "status": "success",
+            "message": "Transaction timestamp updated"
+        }), 200
+    else:
+        return jsonify({
+            "status": "error",
+            "message": "Failed to update transaction timestamp"
         }), 500
 
 def init_payment_routes(app):

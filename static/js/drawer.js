@@ -118,21 +118,80 @@ document.addEventListener('DOMContentLoaded', function() {
                 clearInterval(qrRefreshInterval);
                 qrRefreshInterval = null;
                 
+                // Only proceed if drawer is still open
+                if (!drawer.classList.contains('open')) {
+                    console.log("Drawer closed, skipping QR refresh at timer end");
+                    return;
+                }
+                
+                // Get the current transaction ID
+                const transactionId = localStorage.getItem('currentTransactionId');
+                
                 // Show refresh animation
                 if (refreshAnimation) {
                     refreshAnimation.classList.add('active');
                     
-                    // Refresh QR code after animation
-                    setTimeout(function() {
-                        // Only refresh if drawer is still open
-                        if (drawer.classList.contains('open')) {
-                            setupVerificationFlow().showPaymentStepImpl();
-                        }
-                    }, 1500);
+                    // Update transaction timestamp in Firebase first
+                    if (transactionId) {
+                        updateQrTimestamp(transactionId).then(success => {
+                            console.log("QR timestamp update result:", success);
+                            
+                            // Check if drawer is still open before calling showPaymentStepImpl
+                            if (drawer.classList.contains('open')) {
+                                // Use a timeout to allow the animation to play
+                                setTimeout(function() {
+                                    if (drawer.classList.contains('open')) {
+                                        const verificationFlow = setupVerificationFlow();
+                                        if (verificationFlow && verificationFlow.showPaymentStepImpl) {
+                                            verificationFlow.showPaymentStepImpl();
+                                        }
+                                    } else {
+                                        console.log("Drawer closed during refresh animation, aborting");
+                                    }
+                                }, 1500);
+                            } else {
+                                console.log("Drawer closed after timestamp update, aborting refresh");
+                                refreshAnimation.classList.remove('active');
+                            }
+                        });
+                    } else {
+                        // No transaction ID, just refresh the QR
+                        setTimeout(function() {
+                            if (drawer.classList.contains('open')) {
+                                const verificationFlow = setupVerificationFlow();
+                                if (verificationFlow && verificationFlow.showPaymentStepImpl) {
+                                    verificationFlow.showPaymentStepImpl();
+                                }
+                            } else {
+                                console.log("Drawer closed during refresh animation, aborting");
+                                refreshAnimation.classList.remove('active');
+                            }
+                        }, 1500);
+                    }
                 } else {
-                    // No animation, refresh immediately if drawer is still open
-                    if (drawer.classList.contains('open')) {
-                        setupVerificationFlow().showPaymentStepImpl();
+                    // No animation, but still update timestamp
+                    if (transactionId) {
+                        updateQrTimestamp(transactionId).then(success => {
+                            console.log("QR timestamp update result:", success);
+                            
+                            // Only generate new QR if drawer is still open
+                            if (drawer.classList.contains('open')) {
+                                const verificationFlow = setupVerificationFlow();
+                                if (verificationFlow && verificationFlow.showPaymentStepImpl) {
+                                    verificationFlow.showPaymentStepImpl();
+                                }
+                            } else {
+                                console.log("Drawer closed after timestamp update, aborting refresh");
+                            }
+                        });
+                    } else {
+                        // No transaction ID, just refresh the QR if drawer is open
+                        if (drawer.classList.contains('open')) {
+                            const verificationFlow = setupVerificationFlow();
+                            if (verificationFlow && verificationFlow.showPaymentStepImpl) {
+                                verificationFlow.showPaymentStepImpl();
+                            }
+                        }
                     }
                 }
             }
@@ -186,6 +245,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // QR refresh timer variables
         let currentUpiUrl = '';
+
+        // State management to prevent rapid QR generation
+        let isGeneratingQR = false;
+        let lastQRGeneration = 0;
+        const QR_COOLDOWN_MS = 2000; // 2-second cooldown
         
         // Get cart amount from the DOM or localStorage if available
         function getCartAmount() {
@@ -479,6 +543,21 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
                 
+                // Add cooldown check to prevent rapid QR generation
+                const now = Date.now();
+                if (isGeneratingQR) {
+                    console.log("QR generation already in progress, skipping");
+                    return;
+                }
+                
+                if (now - lastQRGeneration < QR_COOLDOWN_MS) {
+                    console.log(`QR generation on cooldown (${QR_COOLDOWN_MS}ms), skipping`);
+                    return;
+                }
+                
+                // Set generating flag
+                isGeneratingQR = true;
+                
                 const paymentQrCode = document.getElementById('payment-qr-code');
                 const paymentQrContainer = document.getElementById('payment-qr-container');
                 const loadingIndicator = paymentQrContainer.querySelector('.qr-loading');
@@ -503,87 +582,114 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.log("Updated amount display:", formattedAmount);
                 }
                 
-                // Get verified phone from localStorage or use current
-                const verifiedPhone = localStorage.getItem('verifiedPhone') || `${selectedCountryCode}${currentPhoneNumber}`;
-                console.log("Using verified phone for payment:", verifiedPhone);
-                
-                // Generate QR code
-                console.log("Calling generatePaymentQR with:", verifiedPhone, amount);
-                const response = await generatePaymentQR(verifiedPhone, amount);
-                console.log("QR generation response:", response);
-                
-                // Check again if drawer is open - in case it was closed during the API call
-                if (!drawer.classList.contains('open')) {
-                    console.log("Drawer was closed during QR generation, aborting");
-                    return;
-                }
-                
-                // Hide loading state
-                if (loadingIndicator) loadingIndicator.style.display = 'none';
-                
-                if (response.status === 'success') {
-                    // Set QR code image
-                    if (paymentQrCode) {
-                        console.log("QR code data length:", response.qr_code.length);
-                        paymentQrCode.src = response.qr_code;
-                        paymentQrCode.classList.remove('hidden');
+                try {
+                    // Get verified phone from localStorage or use current
+                    const verifiedPhone = localStorage.getItem('verifiedPhone') || `${selectedCountryCode}${currentPhoneNumber}`;
+                    console.log("Using verified phone for payment:", verifiedPhone);
+                    
+                    // Generate QR code
+                    console.log("Calling generatePaymentQR with:", verifiedPhone, amount);
+                    const response = await generatePaymentQR(verifiedPhone, amount);
+                    console.log("QR generation response:", response);
+                    
+                    // Update timestamp after successful generation
+                    lastQRGeneration = Date.now();
+                    
+                    // Check again if drawer is open - in case it was closed during the API call
+                    if (!drawer.classList.contains('open')) {
+                        console.log("Drawer was closed during QR generation, aborting");
+                        isGeneratingQR = false;
+                        return;
+                    }
+                    
+                    // Hide loading state
+                    if (loadingIndicator) loadingIndicator.style.display = 'none';
+                    
+                    if (response.status === 'success') {
+                        // Log if this was a new transaction or reused one
+                        if (response.is_new_transaction !== undefined) {
+                            console.log(response.is_new_transaction 
+                                ? "Created new transaction in Firebase" 
+                                : "Reused existing transaction from Firebase");
+                        }
                         
-                        paymentQrCode.onerror = function() {
-                            console.error("Failed to load QR code image");
-                            paymentQrCode.classList.add('hidden');
-                            if (loadingIndicator) {
-                                loadingIndicator.style.display = 'flex';
-                                loadingIndicator.querySelector('span').textContent = 'Failed to load QR code';
+                        // Store transaction ID in localStorage if available
+                        if (response.transaction_id) {
+                            localStorage.setItem('currentTransactionId', response.transaction_id);
+                            console.log("Saved transaction ID to localStorage:", response.transaction_id);
+                        }
+                        
+                        // Set QR code image
+                        if (paymentQrCode) {
+                            console.log("QR code data length:", response.qr_code.length);
+                            paymentQrCode.src = response.qr_code;
+                            paymentQrCode.classList.remove('hidden');
+                            
+                            paymentQrCode.onerror = function() {
+                                console.error("Failed to load QR code image");
+                                paymentQrCode.classList.add('hidden');
+                                if (loadingIndicator) {
+                                    loadingIndicator.style.display = 'flex';
+                                    loadingIndicator.querySelector('span').textContent = 'Failed to load QR code';
+                                }
+                            };
+                        }
+                        
+                        // Store UPI URL for the app button
+                        if (response.upi_details && response.upi_details.upi_url) {
+                            currentUpiUrl = response.upi_details.upi_url;
+                            
+                            // Setup UPI app button
+                            if (upiAppBtn) {
+                                upiAppBtn.onclick = function() {
+                                    window.location.href = currentUpiUrl;
+                                };
                             }
-                        };
-                    }
-                    
-                    // Store UPI URL for the app button
-                    if (response.upi_details && response.upi_details.upi_url) {
-                        currentUpiUrl = response.upi_details.upi_url;
-                        
-                        // Setup UPI app button
-                        if (upiAppBtn) {
-                            upiAppBtn.onclick = function() {
-                                window.location.href = currentUpiUrl;
-                            };
+                        } else if (response.upi_details && response.upi_details.upi_id) {
+                            // Construct UPI URL if not provided directly
+                            const upiId = response.upi_details.upi_id;
+                            currentUpiUrl = `upi://pay?pa=${upiId}&am=${amount}&pn=${response.upi_details.merchant_name || 'Krishna Kumar Soni'}&tn=${response.upi_details.transaction_note || 'Payment for order'}`;
+                            
+                            // Setup UPI app button
+                            if (upiAppBtn) {
+                                upiAppBtn.onclick = function() {
+                                    window.location.href = currentUpiUrl;
+                                };
+                            }
                         }
-                    } else if (response.upi_details && response.upi_details.upi_id) {
-                        // Construct UPI URL if not provided directly
-                        const upiId = response.upi_details.upi_id;
-                        currentUpiUrl = `upi://pay?pa=${upiId}&am=${amount}&pn=${response.upi_details.merchant_name || 'Krishna Kumar Soni'}&tn=${response.upi_details.transaction_note || 'Payment for order'}`;
                         
-                        // Setup UPI app button
-                        if (upiAppBtn) {
-                            upiAppBtn.onclick = function() {
-                                window.location.href = currentUpiUrl;
-                            };
+                        // Only start timer if drawer is still open
+                        if (drawer.classList.contains('open')) {
+                            // First clear any existing timer to prevent multiple timers
+                            clearGlobalQrTimer();
+                            
+                            // Then start a new QR refresh timer
+                            startGlobalQrTimer();
+                        }
+                    } else {
+                        // Handle error
+                        console.error("Failed to generate QR code:", response);
+                        
+                        if (loadingIndicator) {
+                            loadingIndicator.style.display = 'flex';
+                            loadingIndicator.querySelector('span').textContent = response.message || 'Failed to generate QR code';
+                        }
+                        
+                        if (paymentQrCode) {
+                            paymentQrCode.classList.add('hidden');
                         }
                     }
-                    
-                    // Only start timer if drawer is still open
-                    if (drawer.classList.contains('open')) {
-                        // First clear any existing timer to prevent multiple timers
-                        clearGlobalQrTimer();
-                        
-                        // Then start a new QR refresh timer
-                        startGlobalQrTimer();
-                    }
-                } else {
-                    // Handle error
-                    console.error("Failed to generate QR code:", response);
-                    
-                    if (loadingIndicator) {
-                        loadingIndicator.style.display = 'flex';
-                        loadingIndicator.querySelector('span').textContent = response.message || 'Failed to generate QR code';
-                    }
-                    
-                    if (paymentQrCode) {
-                        paymentQrCode.classList.add('hidden');
-                    }
+                } catch (error) {
+                    console.error("Error generating QR:", error);
+                } finally {
+                    // Always reset the generating flag
+                    isGeneratingQR = false;
                 }
             } catch (error) {
                 console.error("Error in showPaymentStepImpl:", error);
+                // Reset generating flag on error
+                isGeneratingQR = false;
+                
                 const loadingIndicator = document.querySelector('.qr-loading');
                 if (loadingIndicator) {
                     loadingIndicator.style.display = 'flex';
@@ -928,7 +1034,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Return object with internal functions that need to be accessed from outside
         return {
             showPaymentStepImpl,
-            clearQrRefreshTimer: clearGlobalQrTimer
+            clearQrRefreshTimer: clearGlobalQrTimer,
+            callApi: callApi
         };
     }
     
@@ -937,4 +1044,132 @@ document.addEventListener('DOMContentLoaded', function() {
         open: openDrawer,
         close: closeDrawer
     };
+
+    // First I'll add a function to update the QR timestamp:
+    async function updateQrTimestamp(transactionId) {
+        if (!transactionId) {
+            console.log("No transaction ID available for updating timestamp");
+            return false;
+        }
+        
+        try {
+            // Check if we have the callApi function in scope
+            let callApiFn;
+            if (typeof callApi === 'function') {
+                callApiFn = callApi;
+            } else {
+                // Try to get it from setupVerificationFlow
+                const verificationFlow = setupVerificationFlow();
+                if (verificationFlow && verificationFlow.callApi) {
+                    callApiFn = verificationFlow.callApi;
+                } else {
+                    console.error("Cannot access callApi function");
+                    return false;
+                }
+            }
+            
+            const response = await callApiFn('payment/update-qr-timestamp', {
+                transaction_id: transactionId
+            });
+            
+            if (response.status === 'success') {
+                console.log("Transaction timestamp updated successfully");
+                return true;
+            } else {
+                console.error("Failed to update transaction timestamp:", response.message);
+                return false;
+            }
+        } catch (error) {
+            console.error("Error updating transaction timestamp:", error);
+            return false;
+        }
+    }
+
+    // Now I'll modify the QR refresh function
+    function refreshQrCode() {
+        // Check if drawer is open
+        if (!drawer.classList.contains('open')) {
+            console.log("Drawer is closed, cannot refresh QR code");
+            return;
+        }
+        
+        // Get verification flow
+        const verificationFlow = setupVerificationFlow();
+        if (!verificationFlow || !verificationFlow.showPaymentStepImpl) {
+            console.error("Cannot access showPaymentStepImpl function");
+            return;
+        }
+        
+        const refreshAnimation = document.querySelector('.refresh-animation');
+        if (refreshAnimation) {
+            refreshAnimation.classList.add('active');
+        }
+        
+        // Get current transaction ID
+        const transactionId = localStorage.getItem('currentTransactionId');
+        
+        // Update transaction timestamp in Firebase first
+        if (transactionId) {
+            updateQrTimestamp(transactionId).then(success => {
+                console.log("QR timestamp update result:", success);
+                
+                // Check if drawer is still open
+                if (drawer.classList.contains('open')) {
+                    // Then refresh the QR code
+                    setTimeout(() => {
+                        // Check again if drawer is still open
+                        if (drawer.classList.contains('open')) {
+                            verificationFlow.showPaymentStepImpl();
+                        }
+                        
+                        if (refreshAnimation) {
+                            setTimeout(() => {
+                                refreshAnimation.classList.remove('active');
+                            }, 500);
+                        }
+                    }, 500);
+                } else {
+                    // Drawer closed during update, clear animation
+                    if (refreshAnimation) {
+                        refreshAnimation.classList.remove('active');
+                    }
+                }
+            }).catch(error => {
+                console.error("Error updating QR timestamp:", error);
+                
+                // Still try to refresh the QR in case of error
+                if (drawer.classList.contains('open')) {
+                    setTimeout(() => {
+                        if (drawer.classList.contains('open')) {
+                            verificationFlow.showPaymentStepImpl();
+                        }
+                        
+                        if (refreshAnimation) {
+                            setTimeout(() => {
+                                refreshAnimation.classList.remove('active');
+                            }, 500);
+                        }
+                    }, 500);
+                } else {
+                    // Drawer closed during update, clear animation
+                    if (refreshAnimation) {
+                        refreshAnimation.classList.remove('active');
+                    }
+                }
+            });
+        } else {
+            // No transaction ID, just refresh the QR
+            setTimeout(() => {
+                if (drawer.classList.contains('open')) {
+                    verificationFlow.showPaymentStepImpl();
+                }
+                
+                if (refreshAnimation) {
+                    setTimeout(() => {
+                        refreshAnimation.classList.remove('active');
+                    }, 500);
+                }
+            }, 500);
+        }
+    }
 }); 

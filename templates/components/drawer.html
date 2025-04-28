@@ -102,7 +102,7 @@
                     <div class="qr-code-wrapper">
                         <div id="payment-qr-container" class="payment-qr-container">
                             <img id="payment-qr-code" class="hidden" alt="UPI Payment QR Code">
-                            <div class="qr-loading">
+                            <div class="qr-loading active">
                                 <i class="ph ph-spinner ph-spin"></i>
                                 <span>Generating QR code...</span>
                             </div>
@@ -504,7 +504,7 @@
 
 #payment-qr-container {
     width: 100%;
-    height: auto;
+    height: 200px;
     border-radius: 6px;
     display: block;
     transform: scale(1);
@@ -519,26 +519,29 @@
     height: 100%;
     background-color: rgba(255, 255, 255, 0.8);
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
+    gap: 12px;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.3s ease;
 }
 
+.qr-loading.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
 .qr-loading i {
     font-size: 32px;
-    color: #D35400;
+    color: var(--color-brand-primary, #D35400);
     animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
-}
-
-.qr-loading.active {
-    opacity: 1;
 }
 
 .qr-timer {
@@ -639,21 +642,36 @@
 }
 
 .qr-loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.8);
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     gap: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.qr-loading.active {
+    opacity: 1;
+    pointer-events: auto;
 }
 
 .qr-loading i {
     font-size: 32px;
     color: var(--color-brand-primary, #D35400);
+    animation: spin 1s linear infinite;
 }
 
-.qr-loading span {
-    font-size: 14px;
-    color: var(--color-text-secondary, #5D6D7E);
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 #payment-qr-code {
@@ -661,6 +679,7 @@
     height: 100%;
     object-fit: contain;
     border-radius: 12px;
+    max-height: 200px;
 }
 
 #payment-qr-code.hidden {
